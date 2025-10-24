@@ -1,0 +1,7 @@
+*.out
+*.ilk
+*.pdb
+*.o
+*.exe
+*bin
+*output
