@@ -5,7 +5,7 @@
 #include "MyHashMapNode.h"
 #include "Logger.h"
 
-#define DEFAULT_NUM_BUCKETS 8
+#define DEFAULT_NUM_BUCKETS 9
 
 template<typename Key, typename Value>
 class MyHashMap
@@ -30,9 +30,9 @@ private:
 
     size_t hash_fun(const Key& key);
 
-    void add_to_bucket(const Key& key, const Value& val, const size_t hash_val, const size_t mod);
-    Value* get_from_bucket(const Key& key, const size_t hash_val, const size_t mod);
-    void delete_from_bucket(const Key& key, const size_t hash_val, const size_t mod);
+    void add_to_bucket(const Key& key, const Value& val, const size_t& hash_val, const size_t& mod);
+    Value* get_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod);
+    void delete_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod);
     void delete_all_buckets();
     void copy_all_buckets(MyHashMapNode<Key, Value>** buckets_);
 };

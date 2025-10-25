@@ -1,5 +1,4 @@
 #include "../include/Logger.h"
-#include <memory>
 
 std::unique_ptr<std::ofstream> Logger::logFileStream;
 std::unique_ptr<std::ofstream> Logger::drawFileStream;
@@ -8,16 +7,43 @@ int Logger::level = TRACE;
 std::ostream* Logger::logOut(&std::cout);
 std::ostream* Logger::drawOut(&std::cout);
 
+bool Logger::is_started = false;
+std::chrono::time_point<std::chrono::high_resolution_clock> Logger::start_time = {};
+std::chrono::time_point<std::chrono::high_resolution_clock> Logger::end_time = {};
+
 Logger::~Logger()
 {
-    logFileStream->close();
-    logFileStream.reset();
+    Logger::end();
+    print("\nLOGGING ENDED\n");
+    if(logFileStream)
+    {
+        logFileStream->close();
+        logFileStream.reset();
+    }
 }
 
 // Class functions
-void Logger::print(const char* msg)
+void Logger::start()
 {
-    *logOut << msg << std::endl;
+    Logger::is_started = true;
+    start_time = std::chrono::high_resolution_clock::now();
+}
+
+void Logger::end()
+{
+    if(is_started)
+    {
+        end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::microseconds dur = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+
+        print("\nExecution time: ", (float)(dur.count() / 1000.0), " miliseconds");
+    }
+}
+
+template <typename... T>
+void Logger::print(const T&... msg)
+{
+    (*logOut << ... << msg) << std::endl;
 }
 
 void Logger::setLevel(int lvl)
@@ -25,37 +51,73 @@ void Logger::setLevel(int lvl)
     level = lvl;
 }
 
-void Logger::setOutput(std::ostream*& output, std::unique_ptr<std::ofstream>& ofstream, const char* filename)
+void Logger::setOutput(std::ostream*& output, std::unique_ptr<std::ofstream>& ofstream, const std::string& filepath)
 {
-    if(strcmp(filename, "stdout") == 0)
+    if(filepath == "stdout")
     {
         ofstream.reset();
         output = &std::cout;
     }
     else
     {
-        ofstream = std::make_unique<std::ofstream>(filename, std::ios::app);
+        ofstream = std::make_unique<std::ofstream>(filepath, std::ios::trunc);
         if (!ofstream->is_open()) {
             ofstream.reset();
             output = &std::cout;
         }
         else
-        {
+        {   
             output = ofstream.get();
         }
     }
 }
 
-void Logger::setLogOutput(const char* filename)
+void Logger::setLogOutput(const char* file_dir)
 {
-    setOutput(logOut, logFileStream, filename);
+    int nextLog = 1; //getNextLogFile(file_dir)
+    std::string full_filepath = std::string(file_dir) + std::string("log") + std::to_string(nextLog) + ".log";
+    setOutput(logOut, logFileStream, full_filepath);
     print("\n\nLOGGING STARTED\n");
 }
 
-void Logger::setDrawOutput(const char* filename)
+void Logger::setDrawOutput(const char* file_dir)
 {
-    setOutput(drawOut, drawFileStream, filename);
+    int nextLog = 1; //getNextLogFile(file_dir)
+    std::string full_filepath = std::string(file_dir) + std::string("drw") + std::to_string(nextLog) + ".txt";
+    setOutput(drawOut, drawFileStream, full_filepath);
     Draw("\n\nDRAWING STARTED\n");
+}
+
+// TODO - timestamp
+int Logger::getNextLogFile(const char* logDir)
+{
+    if (!std::filesystem::exists(logDir))
+    {
+        std::filesystem::create_directories(logDir);
+    }
+
+    std::vector<int> logNumbers;
+
+    for (const auto& entry : std::filesystem::directory_iterator(logDir)) {
+        if (entry.is_regular_file()) {
+            std::string filename = entry.path().filename().string();
+            if ((filename.find("log") == 0 && filename.find(".log") != std::string::npos) || (filename.find("drw") == 0 && filename.find(".txt") != std::string::npos)) {
+                try {
+                    int num = std::stoi(filename.substr(3, filename.size() - 7)); // logX.log -> X
+                    logNumbers.push_back(num);
+                } catch (...) {
+                    // ignore non-conforming files
+                }
+            }
+        }
+    }
+
+    int nextLog = 0;
+    if (!logNumbers.empty()) {
+        nextLog = (*std::max_element(logNumbers.begin(), logNumbers.end())) % (MAX_NUM_LOGS_IN_ROTATION) + 1;
+    }
+
+    return nextLog;
 }
 
 const char* Logger::level_to_string(int level)

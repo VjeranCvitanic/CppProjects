@@ -5,32 +5,36 @@ template <typename Key, typename Value>
 MyHashMapNode<Key, Value>::MyHashMapNode()
     : key{}, value{}, hash_value(0), next(nullptr)
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Value Constructor");
+    LOG_TRACE("Value Constructor");
 }
 template <typename Key, typename Value>
-MyHashMapNode<Key, Value>::MyHashMapNode(Key key_, Value val_, size_t hash_val_)
+MyHashMapNode<Key, Value>::MyHashMapNode(const Key& key_, const Value& val_, const size_t& hash_val_)
     : key(key_), value(val_), hash_value(hash_val_), next(nullptr)
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Value constructor 2");
+    LOG_TRACE("Value Constructor 2");
+    LOG_VAR(key_, val_, hash_val_);
 }
+
 template <typename Key, typename Value>
-MyHashMapNode<Key, Value>::MyHashMapNode(Key key_, Value val_, size_t hash_val_, MyHashMapNode<Key, Value>* next_)
+MyHashMapNode<Key, Value>::MyHashMapNode(const Key& key_, const Value& val_, const size_t& hash_val_, MyHashMapNode<Key, Value>* next_)
     : key(key_), value(val_), hash_value(hash_val_), next(next_)
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Value constructor 3");
+    LOG_TRACE("Value Constructor 3");
+    LOG_VAR(key_, val_, hash_val_, next_);
 }
+
 template <typename Key, typename Value>
 MyHashMapNode<Key, Value>::MyHashMapNode(const MyHashMapNode<Key, Value>& other)
     : key(other.key), value(other.value), hash_value(other.hash_value)
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Copy constructor");
+    LOG_TRACE("Copy Constructor");
     next = other.next ? new MyHashMapNode<Key, Value>(*other.next) : nullptr; // TODO: recursion problem -> init by value?
 }
 template <typename Key, typename Value>
 MyHashMapNode<Key, Value>::MyHashMapNode(MyHashMapNode<Key, Value>&& other)
     : key(std::move(other.key)), value(std::move(other.value)), hash_value(other.hash_value), next(other.next)
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Move constructor");
+    LOG_TRACE("Move Constructor");
     other.next = nullptr;
     other.key = {};
     other.value = {};
@@ -39,7 +43,7 @@ MyHashMapNode<Key, Value>::MyHashMapNode(MyHashMapNode<Key, Value>&& other)
 template <typename Key, typename Value>
 MyHashMapNode<Key, Value>& MyHashMapNode<Key, Value>::operator=(const MyHashMapNode<Key, Value>& other)
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Copy assignment operator");
+    LOG_TRACE("Copy assignment operator");
     if(this == &other)
         return *this;
     key = other.key;
@@ -52,12 +56,14 @@ MyHashMapNode<Key, Value>& MyHashMapNode<Key, Value>::operator=(const MyHashMapN
 template <typename Key, typename Value>
 MyHashMapNode<Key, Value>& MyHashMapNode<Key, Value>::operator=(MyHashMapNode<Key, Value>&& other)
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Move assignment operator");
+    LOG_TRACE("Move assignment operator");
     if(this == &other)
         return *this;
     key = std::move(other.key);
     value = std::move(other.value);
     hash_value = other.hash_value;
+    LOG_DEBUG("Delete next");
+    LOG_VAR(next);
     delete next;
     next = other.next;
 
@@ -72,7 +78,8 @@ MyHashMapNode<Key, Value>& MyHashMapNode<Key, Value>::operator=(MyHashMapNode<Ke
 template <typename Key, typename Value>
 MyHashMapNode<Key, Value>::~MyHashMapNode()
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Destructor");
+    LOG_VAR(key, value, hash_value, next);
+    LOG_TRACE("Destructor");
 }
 
 template <typename Key, typename Value>
@@ -82,15 +89,15 @@ MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::getNext() const
 }
 
 template <typename Key, typename Value>
-void MyHashMapNode<Key, Value>::insert(const Key& key, const Value& val, size_t hash_val)
+void MyHashMapNode<Key, Value>::insert(const Key& key, const Value& val, const size_t& hash_val)
 {
     MyHashMapNode<Key, Value>* prev = find_prev_or_last(key, hash_val);
-
+    LOG_TRACE("Insert operation");
     prev->next = new MyHashMapNode<Key, Value>(key, val, hash_val, prev->next);
 }
 
 template <typename Key, typename Value>
-Value* MyHashMapNode<Key, Value>::get(const Key& key, size_t hash_val)
+Value* MyHashMapNode<Key, Value>::get(const Key& key, const size_t& hash_val)
 {
     MyHashMapNode<Key, Value>* target = find(key, hash_val);
 
@@ -105,16 +112,19 @@ Value* MyHashMapNode<Key, Value>::get(const Key& key, size_t hash_val)
 }
 
 template <typename Key, typename Value>
-void MyHashMapNode<Key, Value>::remove(const Key& key, size_t hash_val)
+void MyHashMapNode<Key, Value>::remove(const Key& key, const size_t& hash_val)
 {
     MyHashMapNode<Key, Value>* prev = find_prev(key, hash_val);
     if(!prev)
     {
-        Logger::Log(__FILE__, __func__, DEBUG, "Element not existent in the map");
+        LOG_DEBUG("Element not existent in the map");
+        LOG_VAR(key, hash_val);
         return;
     }
     MyHashMapNode<Key, Value>* del = prev->next;
     prev->next = del->next;
+    LOG_DEBUG("Delete element");
+    LOG_VAR(del->key, del->value, del->hash_value, del->next);
     delete del;
 }
 
@@ -124,14 +134,14 @@ void MyHashMapNode<Key, Value>::Print()
     MyHashMapNode<Key, Value>* curr = this->next;
     while(curr)
     {
-        Logger::Draw(curr->value, "(", curr->key, ")");
+        DRAW(curr->value, "(", curr->key, ")");
         curr = curr->next;
         if(curr)
-            Logger::Draw(" -> ");
+            DRAW(" -> ");
     }
 }
 template <typename Key, typename Value>
-MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::find_prev_or_last(const Key& key, size_t hash_val)
+MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::find_prev_or_last(const Key& key, const size_t& hash_val)
 {
     MyHashMapNode<Key, Value>* curr = this;
     while(curr->next && curr->next->hash_value < hash_val)
@@ -142,14 +152,14 @@ MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::find_prev_or_last(const Ke
     return curr;
 }
 template <typename Key, typename Value>
-MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::find_prev(const Key& key, size_t hash_val)
+MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::find_prev(const Key& key, const size_t& hash_val)
 {
     MyHashMapNode<Key, Value>* prev = find_prev_or_last(key, hash_val);
 
     return prev->next ? prev : nullptr;
 }
 template <typename Key, typename Value>
-MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::find(const Key& key, size_t hash_val)
+MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::find(const Key& key, const size_t& hash_val)
 {
     MyHashMapNode<Key, Value>* prev = find_prev(key, hash_val);
     return prev ? prev->next : nullptr;

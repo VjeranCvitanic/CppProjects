@@ -5,7 +5,8 @@ template<typename Key, typename Value>
 MyHashMap<Key, Value>::MyHashMap(int num_buckets_)
     : num_buckets(num_buckets_)
 {
-    Logger::Log(__FILE__, __func__, TRACE, "Basic constructor");
+    LOG_TRACE("Basic constructor");
+    LOG_VAR(num_buckets_);
     buckets = new MyHashMapNode<Key, Value>*[num_buckets];
     for(int i = 0; i < num_buckets; i++)
     {
@@ -16,7 +17,7 @@ template<typename Key, typename Value>
 MyHashMap<Key, Value>::MyHashMap(const MyHashMap<Key, Value>& other)
     : num_buckets(other.num_buckets)
 {
-    Logger::Log(__FILE__, __func__,  TRACE, "Copy constructor");
+    LOG_TRACE("Copy constructor");
     buckets = new MyHashMapNode<Key, Value>*[num_buckets];
     for(int i = 0; i < num_buckets; i++)
     {
@@ -27,18 +28,18 @@ template<typename Key, typename Value>
 MyHashMap<Key, Value>::MyHashMap(MyHashMap<Key, Value>&& other)
     : num_buckets(other.num_buckets), buckets(other.buckets)
 {
-    Logger::Log(__FILE__, __func__,  TRACE, "Move constructor");
+    LOG_TRACE("Move constructor");
     other.buckets = nullptr;
     other.num_buckets = 0;
 }
 template<typename Key, typename Value>
 MyHashMap<Key, Value>& MyHashMap<Key, Value>::operator=(const MyHashMap<Key, Value>& other)
 {
-    Logger::Log(__FILE__, __func__,  TRACE, "Copy assignment operator");
+    LOG_TRACE("Copy assignment operator");
     if(this == &other)
         return *this;
-    num_buckets = other.num_buckets;
     delete_all_buckets();
+    num_buckets = other.num_buckets;
     copy_all_buckets(other.buckets);
 
     return *this;
@@ -46,11 +47,11 @@ MyHashMap<Key, Value>& MyHashMap<Key, Value>::operator=(const MyHashMap<Key, Val
 template<typename Key, typename Value>
 MyHashMap<Key, Value>& MyHashMap<Key, Value>::operator=(MyHashMap<Key, Value>&& other)
 {
-    Logger::Log(__FILE__, __func__,  TRACE, "Move assignment operator");
+    LOG_TRACE("Move assignment operator");
     if(this == &other)
         return *this;
-    num_buckets = other.num_buckets;
     delete_all_buckets();
+    num_buckets = other.num_buckets;
     buckets = other.buckets;
 
     other.buckets = nullptr;
@@ -61,7 +62,7 @@ MyHashMap<Key, Value>& MyHashMap<Key, Value>::operator=(MyHashMap<Key, Value>&& 
 template<typename Key, typename Value>
 MyHashMap<Key, Value>::~MyHashMap()
 {
-    Logger::Log(__FILE__, __func__,  TRACE, "Destructor");
+    LOG_TRACE("Destructor");
     delete_all_buckets();
     delete[] buckets;
     num_buckets = 0;
@@ -71,16 +72,18 @@ template<typename Key, typename Value>
 void MyHashMap<Key, Value>::Add(const Key& key, const Value& value)
 {
     size_t hash_val = hash_fun(key);
+    LOG_DEBUG("Hash_val: ", hash_val);
     size_t mod = hash_val % num_buckets;
-    Logger::Log(__FILE__, __func__,  DEBUG, mod);
+    LOG_DEBUG("Mod value: ", mod);
     add_to_bucket(key, value, hash_val, mod);
 }
 template<typename Key, typename Value>
 Value* MyHashMap<Key, Value>::Get(const Key& key)
 {
     size_t hash_val = hash_fun(key);
+    LOG_DEBUG("Hash_val: ", hash_val);
     size_t mod = hash_val % num_buckets;
-    Logger::Log(__FILE__, __func__,  DEBUG, mod);
+    LOG_DEBUG("Mod value: ", mod);
     Value* ret_val = get_from_bucket(key, hash_val, mod);
     return ret_val;
 }
@@ -88,20 +91,22 @@ template<typename Key, typename Value>
 void MyHashMap<Key, Value>::Delete(const Key& key)
 {
     size_t hash_val = hash_fun(key);
+    LOG_DEBUG("Hash_val: ", hash_val);
     size_t mod = hash_val % num_buckets;
+    LOG_DEBUG("Mod value: ", mod);
     delete_from_bucket(key, hash_val, mod);
 }
 
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::PrintHashMap()
 {
-    Logger::Draw("MyHashMap\n");
-    Logger::Draw("\n-----------------------------------------------------------------------------------------\n");
+    DRAW("\nMyHashMap\n");
+    DRAW("\n-----------------------------------------------------------------------------------------\n");
     for(int i = 0; i < num_buckets; i++)
     {
-        Logger::Draw(i, ":    ");
+        DRAW(i, ":    ");
         buckets[i]->Print();
-        Logger::Draw("\n-----------------------------------------------------------------------------------------\n");
+        DRAW("\n-----------------------------------------------------------------------------------------\n");
     }
 }
 
@@ -113,14 +118,14 @@ size_t MyHashMap<Key, Value>::hash_fun(const Key& key)
 }
 
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::add_to_bucket(const Key& key, const Value& val, const size_t hash_val, const size_t mod)
+void MyHashMap<Key, Value>::add_to_bucket(const Key& key, const Value& val, const size_t& hash_val, const size_t& mod)
 {
     MyHashMapNode<Key, Value>* curr = buckets[mod];
     curr->insert(key, val, hash_val);
 }
 
 template<typename Key, typename Value>
-Value* MyHashMap<Key, Value>::get_from_bucket(const Key& key, const size_t hash_val, const size_t mod)
+Value* MyHashMap<Key, Value>::get_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod)
 {
     MyHashMapNode<Key, Value>* curr = buckets[mod];
     
@@ -128,7 +133,7 @@ Value* MyHashMap<Key, Value>::get_from_bucket(const Key& key, const size_t hash_
 }
 
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::delete_from_bucket(const Key& key, const size_t hash_val, const size_t mod)
+void MyHashMap<Key, Value>::delete_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod)
 {
     MyHashMapNode<Key, Value>* curr = buckets[mod];
     curr->remove(key, hash_val);
@@ -143,6 +148,7 @@ void MyHashMap<Key, Value>::delete_all_buckets()
         while(curr)
         {
             MyHashMapNode<Key, Value>* temp = curr->getNext();
+            LOG_DEBUG("Delete bucket");
             delete curr;
             curr = temp;
         }

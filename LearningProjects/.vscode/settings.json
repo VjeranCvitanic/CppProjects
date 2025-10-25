@@ -1,0 +1,11 @@
+
+{
+    "ansicolor.languages": ["txt", "log", "ansi"],
+    "vsicons.associations.files": [
+        {
+            "icon": "text",
+            "extensions": ["txt", "ans", "ansi", "log"],
+            "format": "svg"
+        }
+    ]
+}

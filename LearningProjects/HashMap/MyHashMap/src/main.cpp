@@ -3,23 +3,24 @@
 
 void logger_setup()
 {
-    Logger::setLogOutput("./output/logs.txt");
-    Logger::setDrawOutput("./output/draw.txt");
-    Logger::setLevel(DEBUG);
+    Logger::GetInstance().start();
+    Logger::GetInstance().setLogOutput("./output/logs/");
+    Logger::GetInstance().setDrawOutput("./output/draw/");
+    Logger::GetInstance().setLevel(INFO);
 }
 
 int main()
 {
     logger_setup();
 
-    Logger::Log(__FILE__, __func__, DEBUG, "Starting");
+    LOG_DEBUG("Starting");
     MyHashMap<int, int> a;
     {
-        MyHashMap<int, int> map(5);
+        MyHashMap<int, int> map(100);
         srand((unsigned)time(0)); 
         for(int i = 0; i < 100; i++)
         {
-            map.Add(i, rand() % 100);
+            map.Add(i, rand() % 1000);
         }
 
         map.PrintHashMap();
@@ -33,7 +34,7 @@ int main()
     {
         int* val = a.Get(i);
         if(val)
-            Logger::Log(__FILE__, __func__, DEBUG, i, ": ", *val, "~n");
+            LOG_INFO(i, ": ", *val);
     }
 
     a.Delete(0);
@@ -42,7 +43,11 @@ int main()
     {
         int* val = a.Get(i);
         if(val)
-            Logger::Log(__FILE__, __func__, DEBUG, i, ": ", *val, "~n");
+            LOG_INFO(i, ": ", *val);
     }
     return 0;
 }
+
+// TODO:
+//      - log rotation
+//      - recursion when constructing Node
