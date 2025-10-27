@@ -1,24 +1,16 @@
 #include "../include/MyHashMap.h"
 #include "../include/Logger.h"
 
-void logger_setup()
-{
-    Logger::GetInstance().start();
-    Logger::GetInstance().setLogOutput("./output/logs/");
-    Logger::GetInstance().setDrawOutput("./output/draw/");
-    Logger::GetInstance().setLevel(INFO);
-}
-
 int main()
 {
-    logger_setup();
+    Logger::logger_setup("./output/logs/", "./output/draw/", DEBUG);
 
     LOG_DEBUG("Starting");
     MyHashMap<int, int> a;
     {
         MyHashMap<int, int> map(100);
         srand((unsigned)time(0)); 
-        for(int i = 0; i < 100; i++)
+        for(int i = 0; i < 8; i++)
         {
             map.Add(i, rand() % 1000);
         }
@@ -51,3 +43,10 @@ int main()
 // TODO:
 //      - log rotation
 //      - recursion when constructing Node
+//      - measure speed of insert, get operations
+//      - RAII
+//      - node heads on stack instead of heap (for less dynamic alloc)
+
+
+// DONE:
+//      - dynamic bucket size, rehashing, reserve(int expected_num_of_elems)

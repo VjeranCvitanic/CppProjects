@@ -97,6 +97,14 @@ void MyHashMapNode<Key, Value>::insert(const Key& key, const Value& val, const s
 }
 
 template <typename Key, typename Value>
+void MyHashMapNode<Key, Value>::insert(MyHashMapNode<Key, Value>*&& new_node)
+{
+    MyHashMapNode<Key, Value>* prev = find_prev_or_last(key, new_node->hash_value);
+    LOG_TRACE("Insert operation");
+    prev->next = new_node;
+}
+
+template <typename Key, typename Value>
 Value* MyHashMapNode<Key, Value>::get(const Key& key, const size_t& hash_val)
 {
     MyHashMapNode<Key, Value>* target = find(key, hash_val);

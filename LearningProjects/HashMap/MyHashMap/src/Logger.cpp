@@ -23,6 +23,14 @@ Logger::~Logger()
 }
 
 // Class functions
+void Logger::logger_setup(const char* logs_dir, const char* draw_dir, int level)
+{
+    Logger::GetInstance().start();
+    Logger::GetInstance().setLogOutput(logs_dir);
+    Logger::GetInstance().setDrawOutput(draw_dir);
+    Logger::GetInstance().setLevel(level);
+}
+
 void Logger::start()
 {
     Logger::is_started = true;

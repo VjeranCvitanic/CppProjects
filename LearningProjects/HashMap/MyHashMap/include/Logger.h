@@ -65,16 +65,17 @@ public:
                 << "[" << level_to_string(level_) << "] "
                 << module << "::"
                 << func << ": ";
-            (*logOut << ... << msg) << std::endl;
+            ((*logOut << msg << ' '), ...) << std::endl;
         }
     }
 
     template<typename... T>
     static void Draw(const T&... msg)
     {
-        (*drawOut << ... << msg);
+        ((*drawOut << msg << ' '), ...);
     }
 
+    static void logger_setup(const char* logs_dir, const char* draw_dir, int level);
     static void setLevel(int lvl);
     static void setLogOutput(const char* path);
     static void setDrawOutput(const char* path);
