@@ -3,7 +3,8 @@
 std::unique_ptr<std::ofstream> Logger::logFileStream;
 std::unique_ptr<std::ofstream> Logger::drawFileStream;
 
-int Logger::level = TRACE;
+bool Logger::is_on = false;
+int Logger::level = INFO;
 std::ostream* Logger::logOut(&std::cout);
 std::ostream* Logger::drawOut(&std::cout);
 
@@ -15,20 +16,32 @@ Logger::~Logger()
 {
     Logger::end();
     print("\nLOGGING ENDED\n");
+    flush();
     if(logFileStream)
     {
         logFileStream->close();
         logFileStream.reset();
     }
+    if(drawFileStream)
+    {
+        drawFileStream->close();
+        drawFileStream.reset();
+    }
 }
 
 // Class functions
-void Logger::logger_setup(const char* logs_dir, const char* draw_dir, int level)
+void Logger::logger_setup(const char* logs_dir, const char* draw_dir, int level, bool is_on)
 {
     Logger::GetInstance().start();
     Logger::GetInstance().setLogOutput(logs_dir);
     Logger::GetInstance().setDrawOutput(draw_dir);
     Logger::GetInstance().setLevel(level);
+    Logger::GetInstance().setOnOffState(is_on);
+}
+
+void Logger::setOnOffState(bool is_on_)
+{
+    is_on = is_on_;
 }
 
 void Logger::start()
@@ -134,8 +147,6 @@ const char* Logger::level_to_string(int level)
     {
         case DEBUG:
             return "DEBUG";
-        case TRACE:
-            return "TRACE";
         case INFO:
             return "INFO";
         case WARNING:
@@ -145,4 +156,11 @@ const char* Logger::level_to_string(int level)
         default:
             return "";
     }
+}
+
+void Logger::flush() {
+    if (logOut)
+        logOut->flush();
+    if (drawOut)
+        drawOut->flush();
 }

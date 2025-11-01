@@ -3,21 +3,20 @@
 
 int main()
 {
-    Logger::logger_setup("./output/logs/", "./output/draw/", DEBUG);
+    Logger::logger_setup("./output/logs/", "./output/draw/", INFO, true);
 
     LOG_DEBUG("Starting");
-    MyHashMap<int, int> a;
+    MyHashMap<int, int> a(50000);
     {
-        MyHashMap<int, int> map(100);
+        MyHashMap<int, int> map(1, 0.75, true);
         srand((unsigned)time(0)); 
-        for(int i = 0; i < 8; i++)
+        for(int i = 0; i < 10; i++)
         {
-            map.Add(i, rand() % 1000);
+            map.Add(i, rand() % 100);
         }
 
         map.PrintHashMap();
-        a = std::move(map);
-        //a = map;
+        a = map; //a = std::move(map);
     }
 
     a.PrintHashMap();
@@ -27,9 +26,12 @@ int main()
         int* val = a.Get(i);
         if(val)
             LOG_INFO(i, ": ", *val);
+        a.Delete(i);
     }
 
     a.Delete(0);
+
+    a.PrintHashMap();
 
     for(int i = 0; i < 3; i++)
     {
@@ -42,11 +44,18 @@ int main()
 
 // TODO:
 //      - log rotation
-//      - recursion when constructing Node
 //      - measure speed of insert, get operations
 //      - RAII
-//      - node heads on stack instead of heap (for less dynamic alloc)
-
-
+//      - smart pointers
+//      - tests
+//
+//
+// Postponed:
+//      - node heads on stack instead of heap (for less dynamic alloc) - cant do on stack -> options: A) vector<MyHashMApNode*>                                                                                                B) heads are actual elements
+//      - key and hash_value - redundancy
+//
+//
 // DONE:
 //      - dynamic bucket size, rehashing, reserve(int expected_num_of_elems)
+//      - recursion when constructing Node
+//

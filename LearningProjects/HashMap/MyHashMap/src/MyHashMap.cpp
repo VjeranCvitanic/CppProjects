@@ -1,123 +1,175 @@
 #include "../include/MyHashMap.h"
-#include "../include/utils.h"
+#include <cstddef>
 #include <cstdlib>
 
 // Class functions
 template<typename Key, typename Value>
-MyHashMap<Key, Value>::MyHashMap(int expected_num_elements_, float load_factor_)
-    : num_buckets(expected_num_elements_/load_factor_), curr_num_elements(0), expected_num_elements(expected_num_elements_), max_load_factor(load_factor_)
+MyHashMap<Key, Value>::MyHashMap(int expected_num_elements_, float load_factor_, bool auto_rehash_)
+    : num_buckets(ceil(expected_num_elements_/load_factor_)),
+     curr_num_elements(0),
+     expected_num_elements(expected_num_elements_),
+     max_load_factor(load_factor_),
+     auto_rehash(auto_rehash_)
 {
-    LOG_TRACE("Basic constructor");
-    log_curr_state();
+    LOG_INFO("Basic constructor");
 
     init_buckets();
 }
 template<typename Key, typename Value>
 MyHashMap<Key, Value>::MyHashMap(const MyHashMap<Key, Value>& other)
-    : num_buckets(other.num_buckets)
+    : num_buckets(other.num_buckets),
+     curr_num_elements(other.curr_num_elements),
+     expected_num_elements(other.expected_num_elements),
+     max_load_factor(other.max_load_factor),
+     auto_rehash(other.auto_rehash)
 {
-    LOG_TRACE("Copy constructor");
+    LOG_INFO("Copy constructor");
     init_buckets(other.buckets);
 }
 template<typename Key, typename Value>
 MyHashMap<Key, Value>::MyHashMap(MyHashMap<Key, Value>&& other)
-    : num_buckets(other.num_buckets), buckets(other.buckets)
+    : num_buckets(other.num_buckets),
+     curr_num_elements(other.curr_num_elements),
+     buckets(other.buckets),
+     expected_num_elements(other.expected_num_elements),
+     max_load_factor(other.max_load_factor),
+     auto_rehash(other.auto_rehash)
 {
-    LOG_TRACE("Move constructor");
+    LOG_INFO("Move constructor");
     other.buckets = nullptr;
     other.num_buckets = 0;
+    other.curr_num_elements = 0;
+    other.expected_num_elements = 0;
+    other.max_load_factor = 0.0;
 }
 template<typename Key, typename Value>
 MyHashMap<Key, Value>& MyHashMap<Key, Value>::operator=(const MyHashMap<Key, Value>& other)
 {
-    LOG_TRACE("Copy assignment operator");
+    LOG_INFO("Copy assignment operator");
     if(this == &other)
         return *this;
     delete_all_buckets();
+    delete[] buckets;
     num_buckets = other.num_buckets;
-    copy_all_buckets(other.buckets);
+    max_load_factor = other.max_load_factor;
+    curr_num_elements = other.curr_num_elements;
+    expected_num_elements = other.expected_num_elements;
+    auto_rehash = other.auto_rehash;
+    create_buckets(other.buckets);
 
     return *this;
 }
 template<typename Key, typename Value>
 MyHashMap<Key, Value>& MyHashMap<Key, Value>::operator=(MyHashMap<Key, Value>&& other)
 {
-    LOG_TRACE("Move assignment operator");
+    LOG_INFO("Move assignment operator");
     if(this == &other)
         return *this;
     delete_all_buckets();
     num_buckets = other.num_buckets;
+    max_load_factor = other.max_load_factor;
+    curr_num_elements = other.curr_num_elements;
+    expected_num_elements = other.expected_num_elements;
+    auto_rehash = other.auto_rehash;
     buckets = other.buckets;
+    
 
     other.buckets = nullptr;
     other.num_buckets = 0;
+    other.curr_num_elements = 0;
+    other.expected_num_elements = 0;
+    other.max_load_factor = 0.0;
+    other.auto_rehash = false;
 
     return *this;
 }
 template<typename Key, typename Value>
 MyHashMap<Key, Value>::~MyHashMap()
 {
-    LOG_TRACE("Destructor");
+    LOG_INFO("Destructor");
     delete_all_buckets();
+    LOG_DEBUG("Delete[] buckets");
     delete[] buckets;
+    buckets = nullptr;
     num_buckets = 0;
+    curr_num_elements = 0;
+    expected_num_elements = 0;
+    max_load_factor = 0.0;
+    auto_rehash = false;
+    LOG_DEBUG("Destructor end");
+}
+
+template<typename Key, typename Value>
+void MyHashMap<Key, Value>::do_Add(const Key& key, const Value& value)
+{
+    LOG_DEBUG("do_Add(key, val)");
+    size_t hash_val = hash_fun(key);
+    size_t mod = hash_val % num_buckets;
+    LOG_DEBUG("Hash_val: ", hash_val, "Mod value: ", mod);
+    add_to_bucket(key, value, hash_val, mod);
+    curr_num_elements++;
+}
+template<typename Key, typename Value>
+void MyHashMap<Key, Value>::do_Add(MyHashMapNode<Key, Value>* other)
+{
+    LOG_DEBUG("do_Add(*)");
+    size_t mod = other->hash_value % num_buckets;
+    LOG_DEBUG("Mod value: ", mod);
+    add_to_bucket(other, mod);
+    curr_num_elements++;
 }
 
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::Add(const Key& key, const Value& value)
 {
-    size_t hash_val = hash_fun(key);
-    LOG_DEBUG("Hash_val: ", hash_val);
-    size_t mod = hash_val % num_buckets;
-    LOG_DEBUG("Mod value: ", mod);
-    add_to_bucket(key, value, hash_val, mod);
-    curr_num_elements++;
+    LOG_INFO("key: ", key, "value: ", value);
+    do_Add(key, value);
     maybe_rehash();
 }
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::Add(MyHashMapNode<Key, Value>*&& other)
+void MyHashMap<Key, Value>::Add(MyHashMapNode<Key, Value>* other)
 {
-    size_t mod = other->hash_value % num_buckets;
-    LOG_DEBUG("Mod value: ", mod);
-    add_to_bucket(std::move(other), mod);
-    curr_num_elements++;
+    LOG_INFO();
+    do_Add(other);
     maybe_rehash();
 }
+
 template<typename Key, typename Value>
 Value* MyHashMap<Key, Value>::Get(const Key& key)
 {
+    LOG_INFO();
     size_t hash_val = hash_fun(key);
-    LOG_DEBUG("Hash_val: ", hash_val);
     size_t mod = hash_val % num_buckets;
-    LOG_DEBUG("Mod value: ", mod);
+    LOG_DEBUG("Hash_val: ", hash_val, "Mod value: ", mod);
     Value* ret_val = get_from_bucket(key, hash_val, mod);
     return ret_val;
 }
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::Delete(const Key& key)
 {
+    LOG_INFO();
     size_t hash_val = hash_fun(key);
-    LOG_DEBUG("Hash_val: ", hash_val);
     size_t mod = hash_val % num_buckets;
-    LOG_DEBUG("Mod value: ", mod);
+    LOG_DEBUG("Hash_val: ", hash_val, "Mod value: ", mod);
     delete_from_bucket(key, hash_val, mod);
     curr_num_elements--;
-    maybe_rehash();
+    //maybe_rehash(); // TODO - negative scenario
 }
 
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::Reserve(int new_exp_num_elems)
 {
-    LOG_TRACE("Reserve called:", new_exp_num_elems);
+    LOG_INFO("Reserve called:", new_exp_num_elems);
     expected_num_elements = new_exp_num_elems;
     if(calc_load_factor(expected_num_elements) > max_load_factor)
-        rehash_1();
-    LOG_TRACE("New num of buckets:", num_buckets);
+        rehash(ceil(expected_num_elements/max_load_factor));
+    LOG_DEBUG("New num of buckets:", num_buckets);
 }
 
 template<typename Key, typename Value>
 int MyHashMap<Key, Value>::SetLoadFactor(float lf)
 {
+    LOG_DEBUG();
     if(lf <= 0)
     {
         LOG_WARNING("Load factor has to be in <0, +inf>, provided value: ", lf);
@@ -133,12 +185,13 @@ int MyHashMap<Key, Value>::SetLoadFactor(float lf)
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::PrintHashMap()
 {
+    LOG_DEBUG();
     DRAW("\nMyHashMap\n");
     DRAW("\n-----------------------------------------------------------------------------------------\n");
     for(int i = 0; i < num_buckets; i++)
     {
         DRAW(i, ":    ");
-        buckets[i]->Print();
+        buckets[i]->Print(); // TODO buckets->print(i):
         DRAW("\n-----------------------------------------------------------------------------------------\n");
     }
 }
@@ -152,21 +205,24 @@ size_t MyHashMap<Key, Value>::hash_fun(const Key& key)
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::add_to_bucket(const Key& key, const Value& val, const size_t& hash_val, const size_t& mod)
 {
-    MyHashMapNode<Key, Value>* curr = buckets[mod];
+    LOG_DEBUG();
+    MyHashMapNode<Key, Value>* curr = buckets[mod]; // TODO null check
     curr->insert(key, val, hash_val);
 }
 
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::add_to_bucket(MyHashMapNode<Key, Value>*&& new_node, int mod)
+void MyHashMap<Key, Value>::add_to_bucket(MyHashMapNode<Key, Value>* new_node, int mod)
 {
-    MyHashMapNode<Key, Value>* curr = buckets[mod];
-    curr->insert(std::move(new_node));
+    LOG_DEBUG();
+    MyHashMapNode<Key, Value>* curr = buckets[mod];// TODO null check
+    curr->insert(new_node);
 }
 
 template<typename Key, typename Value>
 Value* MyHashMap<Key, Value>::get_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod)
 {
-    MyHashMapNode<Key, Value>* curr = buckets[mod];
+    LOG_DEBUG();
+    MyHashMapNode<Key, Value>* curr = buckets[mod];// TODO null check
     
     return curr->get(key, hash_val);
 }
@@ -174,87 +230,102 @@ Value* MyHashMap<Key, Value>::get_from_bucket(const Key& key, const size_t& hash
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::delete_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod)
 {
-    MyHashMapNode<Key, Value>* curr = buckets[mod];
+    LOG_DEBUG();
+    MyHashMapNode<Key, Value>* curr = buckets[mod];// TODO null check
     curr->remove(key, hash_val);
 }
 
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::delete_all_buckets()
 {
+    LOG_INFO();
     for(int i = 0; i < num_buckets; i++)
     {
+        LOG_DEBUG("i: ", i);
         MyHashMapNode<Key, Value>* curr = buckets[i];
         while(curr)
         {
+            LOG_DEBUG("curr != nullptr");
             MyHashMapNode<Key, Value>* temp = curr->getNext();
-            LOG_DEBUG("Delete bucket");
+            LOG_DEBUG("Delete bucket: ", curr);
             delete curr;
+            LOG_DEBUG("After deleting bucket");
             curr = temp;
+            LOG_DEBUG("curr = ", temp);
         }
+        LOG_DEBUG("i: ", i, " - End");
     }
+
+    LOG_DEBUG("End");
 }
 
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::copy_all_buckets(MyHashMapNode<Key, Value>** buckets_)
 {
+    LOG_INFO();
     copy_buckets(buckets, buckets_);
 }
 
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::copy_buckets(MyHashMapNode<Key, Value>**& buckets_new_buckets, MyHashMapNode<Key, Value>** buckets_other_buckets)
+void MyHashMap<Key, Value>::copy_buckets(MyHashMapNode<Key, Value>** buckets_new_buckets, MyHashMapNode<Key, Value>** buckets_other_buckets)
 {
+    LOG_DEBUG();
     for(int i = 0; i < num_buckets; i++)
     {
+        LOG_DEBUG("i: ", i);
         if(buckets_other_buckets[i])
-            buckets_new_buckets[i] = new MyHashMapNode<Key, Value>(*buckets_other_buckets[i]);
+        {
+            buckets_new_buckets[i]->copy_all_next(buckets_other_buckets[i]->next);
+        }
         else
         {
-            LOG_WARNING("Buckets size mismatch at i: ", i);
-            buckets_new_buckets[i] = new MyHashMapNode<Key, Value>();
+            buckets_new_buckets[i]->next = nullptr;
         }
+        LOG_DEBUG("END i: ", i);
     }
 }
 
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::init_buckets()
 {
-    buckets = create_buckets(num_buckets);
+    LOG_DEBUG();
+    create_buckets(num_buckets);
 }
 
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::init_buckets(MyHashMapNode<Key, Value>** other_buckets)
 {
-    buckets = create_buckets(other_buckets);
+    LOG_DEBUG();
+    create_buckets(other_buckets);
 }
 
 template<typename Key, typename Value>
-MyHashMapNode<Key, Value>** MyHashMap<Key, Value>::create_buckets(int num_buckets_)
+void MyHashMap<Key, Value>::create_buckets(int num_buckets_)
 {
-    MyHashMapNode<Key, Value>** new_buckets = new MyHashMapNode<Key, Value>*[num_buckets_];
+    LOG_DEBUG("num_buckets_: ", num_buckets_);
+    buckets = new MyHashMapNode<Key, Value>*[num_buckets_]();
     for(int i = 0; i < num_buckets_; i++)
     {
-        new_buckets[i] = new MyHashMapNode<Key, Value>();
+        buckets[i] = new MyHashMapNode<Key, Value>(); //TODO nullptr
     }
-
-    return new_buckets;
 }
 
 template<typename Key, typename Value>
-MyHashMapNode<Key, Value>** MyHashMap<Key, Value>::create_buckets(MyHashMapNode<Key, Value>** other_buckets)
+void MyHashMap<Key, Value>::create_buckets(MyHashMapNode<Key, Value>** other_buckets)
 {
-    LOG_TRACE("Creating buckets");
-    MyHashMapNode<Key, Value>** new_buckets = new MyHashMapNode<Key, Value>*[num_buckets];
-    copy_buckets(new_buckets, other_buckets);
-
-    return new_buckets;
+    LOG_INFO();
+    create_buckets(num_buckets);
+    copy_buckets(buckets, other_buckets);
 }
 
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::maybe_rehash()
 {
-    LOG_DEBUG("maybe_rehash called");
+    LOG_DEBUG();
+    if(auto_rehash == false)
+        return;
     if(calc_load_factor(curr_num_elements) > max_load_factor)
-        rehash_2();
+        rehash(num_buckets * 1.5);
 }
 
 template<typename Key, typename Value>
@@ -264,45 +335,28 @@ float MyHashMap<Key, Value>::calc_load_factor(int num_elements)
 }
 
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::rehash_1()
-{
-    LOG_DEBUG("Rehash called");
-    rehash(expected_num_elements / max_load_factor);
-}
-
-template<typename Key, typename Value>
-void MyHashMap<Key, Value>::rehash_2()
-{
-    LOG_DEBUG("Rehash called");
-    rehash(num_buckets * 1.5); // 50% increase
-}
-
-template<typename Key, typename Value>
 void MyHashMap<Key, Value>::rehash(int new_num_buckets)
 {
-    LOG_INFO("Rehashing...");
-    LOG_VAR(new_num_buckets);
-    log_curr_state();
-    MyHashMap<Key, Value> newTempMap(max(curr_num_elements, expected_num_elements), max_load_factor);
-
+    LOG_INFO("Rehashing...(new_num_buckets: ", new_num_buckets, ")");
+    LOG_CURR_STATE;
+    MyHashMap<Key, Value> newTempMap(floor(new_num_buckets * max_load_factor), max_load_factor);
     for(int i = 0; i < num_buckets; i++)
     {
         LOG_DEBUG("Copying bucket num: ", i);
         MyHashMapNode<Key, Value>* curr = buckets[i];
-        while(curr->next)
+
+        while(curr && curr->next) // skip curr - empty head
         {
-            newTempMap.Add(std::move(curr->next));
-            curr->next = curr->next->next;
+            newTempMap.do_Add(curr->next);
+            curr = curr->next;
         }
     }
+
+    //this->PrintHashMap();
+    //newTempMap.PrintHashMap();
 
     *this = std::move(newTempMap);
 }
 
-template<typename Key, typename Value>
-void MyHashMap<Key, Value>::log_curr_state()
-{
-    LOG_DEBUG("Curr num of elems: ", curr_num_elements, ", Exp num: ", expected_num_elements, ", Num buckets: ", num_buckets, " Max Load Factor: ", max_load_factor, ", Curr load factor: ", calc_load_factor(curr_num_elements));
-}
 
 template class MyHashMap<int, int>;

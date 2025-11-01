@@ -21,17 +21,15 @@
 #define MAX_NUM_LOGS_IN_ROTATION 9
 
 #define DEBUG 1
-#define TRACE 2
-#define INFO 3
-#define WARNING 4
-#define ERROR 5
+#define INFO 2
+#define WARNING 3
+#define ERROR 4
 
 #define __SHORT_FILE__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
-#define __LOGGER_LOG__(lvl, ...) Logger::Log(lvl, __SHORT_FILE__, __func__, __VA_ARGS__) 
+#define __LOGGER_LOG__(lvl, ...) Logger::Log(lvl, __SHORT_FILE__, __func__, ##__VA_ARGS__) 
 
 #define LOG_DEBUG(...) __LOGGER_LOG__(DEBUG, __VA_ARGS__)
-#define LOG_TRACE(...)  __LOGGER_LOG__(TRACE, __VA_ARGS__)
 #define LOG_INFO(...)  __LOGGER_LOG__(INFO, __VA_ARGS__)
 #define LOG_WARNING(...)  __LOGGER_LOG__(WARNING, __VA_ARGS__)
 #define LOG_ERROR(...) __LOGGER_LOG__(ERROR, __VA_ARGS__)
@@ -54,6 +52,8 @@ public:
     template<typename... T>
     static void Log(int level_, const char* module, const char* func, const T&... msg)
     {
+        if(!Logger::is_on)
+            return;
         if(level_ >= level)
         {
             auto now = std::chrono::system_clock::now();
@@ -64,26 +64,34 @@ public:
                 << "[" << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << "] "
                 << "[" << level_to_string(level_) << "] "
                 << module << "::"
-                << func << ": ";
-            ((*logOut << msg << ' '), ...) << std::endl;
+                << func;
+                ((*logOut << ": " << msg << ' '), ...);
+                *logOut  << std::endl;
         }
+    }
+
+    static void Log(int level_, const char* module, const char* func)
+    {
+        Log(level_, module, func, "");
     }
 
     template<typename... T>
     static void Draw(const T&... msg)
     {
-        ((*drawOut << msg << ' '), ...);
+        ((*drawOut << msg << ' '), ...) << std::flush;
     }
 
-    static void logger_setup(const char* logs_dir, const char* draw_dir, int level);
+    static void logger_setup(const char* logs_dir, const char* draw_dir, int level, bool is_on);
     static void setLevel(int lvl);
     static void setLogOutput(const char* path);
     static void setDrawOutput(const char* path);
+    static void setOnOffState(bool is_on);
     static void start();
     static void end();
 private:
     static std::unique_ptr<Logger> instance;
     static bool is_started;
+    static bool is_on;
     static int level;
     static std::ostream* logOut;
     static std::unique_ptr<std::ofstream> logFileStream;
@@ -99,6 +107,7 @@ private:
     static const char* level_to_string(int level);
     template <typename... T>
     static void print(const T&... msg);
+    void flush();
 };
 
 #endif

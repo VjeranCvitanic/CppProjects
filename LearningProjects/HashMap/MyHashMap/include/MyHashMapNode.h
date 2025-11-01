@@ -23,7 +23,7 @@ public:
     MyHashMapNode<Key, Value>* getNext() const;
 
     void insert(const Key& key, const Value& val, const size_t& hash_val);
-    void insert(MyHashMapNode<Key, Value>*&& new_node);
+    void insert(MyHashMapNode<Key, Value>* new_node);
     Value* get(const Key& key, const size_t& hash_val);
     void remove(const Key& key, const size_t& hash_val);
 
@@ -37,6 +37,9 @@ private:
     MyHashMapNode<Key, Value>* find_prev_or_last(const Key& key, const size_t& hash_val);
     MyHashMapNode<Key, Value>* find_prev(const Key& key, const size_t& hash_val);
     MyHashMapNode<Key, Value>* find(const Key& key, const size_t& hash_val);
+
+    void delete_all_next();
+    void copy_all_next(MyHashMapNode<Key, Value>* head);
 
     template<typename, typename>
     friend class MyHashMap;
