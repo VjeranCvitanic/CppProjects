@@ -1,6 +1,5 @@
 #include "../include/MyHashMap.h"
-#include <cstddef>
-#include <cstdlib>
+
 
 // Class functions
 template<typename Key, typename Value>
@@ -106,8 +105,8 @@ void MyHashMap<Key, Value>::do_Add(const Key& key, const Value& value)
     size_t hash_val = hash_fun(key);
     size_t mod = hash_val % num_buckets;
     LOG_DEBUG("Hash_val: ", hash_val, "Mod value: ", mod);
-    add_to_bucket(key, value, hash_val, mod);
-    curr_num_elements++;
+    if(add_to_bucket(key, value, hash_val, mod) == EXIT_SUCCESS)
+        curr_num_elements++;
 }
 template<typename Key, typename Value>
 void MyHashMap<Key, Value>::do_Add(MyHashMapNode<Key, Value>* other)
@@ -115,8 +114,8 @@ void MyHashMap<Key, Value>::do_Add(MyHashMapNode<Key, Value>* other)
     LOG_DEBUG("do_Add(*)");
     size_t mod = other->hash_value % num_buckets;
     LOG_DEBUG("Mod value: ", mod);
-    add_to_bucket(other, mod);
-    curr_num_elements++;
+    if(add_to_bucket(other, mod) == EXIT_SUCCESS)
+        curr_num_elements++;
 }
 
 template<typename Key, typename Value>
@@ -151,8 +150,8 @@ void MyHashMap<Key, Value>::Delete(const Key& key)
     size_t hash_val = hash_fun(key);
     size_t mod = hash_val % num_buckets;
     LOG_DEBUG("Hash_val: ", hash_val, "Mod value: ", mod);
-    delete_from_bucket(key, hash_val, mod);
-    curr_num_elements--;
+    if(delete_from_bucket(key, hash_val, mod) == EXIT_SUCCESS)
+        curr_num_elements--;
     //maybe_rehash(); // TODO - negative scenario
 }
 
@@ -191,7 +190,7 @@ void MyHashMap<Key, Value>::PrintHashMap()
     for(int i = 0; i < num_buckets; i++)
     {
         DRAW(i, ":    ");
-        buckets[i]->Print(); // TODO buckets->print(i):
+        buckets[i]->Print();
         DRAW("\n-----------------------------------------------------------------------------------------\n");
     }
 }
@@ -203,36 +202,36 @@ size_t MyHashMap<Key, Value>::hash_fun(const Key& key)
 }
 
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::add_to_bucket(const Key& key, const Value& val, const size_t& hash_val, const size_t& mod)
+int8_t MyHashMap<Key, Value>::add_to_bucket(const Key& key, const Value& val, const size_t& hash_val, const size_t& mod)
 {
     LOG_DEBUG();
-    MyHashMapNode<Key, Value>* curr = buckets[mod]; // TODO null check
-    curr->insert(key, val, hash_val);
+    MyHashMapNode<Key, Value>* curr = buckets[mod];
+    return curr->insert(key, val, hash_val);
 }
 
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::add_to_bucket(MyHashMapNode<Key, Value>* new_node, int mod)
+int8_t MyHashMap<Key, Value>::add_to_bucket(MyHashMapNode<Key, Value>* new_node, int mod)
 {
     LOG_DEBUG();
-    MyHashMapNode<Key, Value>* curr = buckets[mod];// TODO null check
-    curr->insert(new_node);
+    MyHashMapNode<Key, Value>* curr = buckets[mod];
+    return curr->insert(new_node);
 }
 
 template<typename Key, typename Value>
 Value* MyHashMap<Key, Value>::get_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod)
 {
     LOG_DEBUG();
-    MyHashMapNode<Key, Value>* curr = buckets[mod];// TODO null check
+    MyHashMapNode<Key, Value>* curr = buckets[mod];
     
     return curr->get(key, hash_val);
 }
 
 template<typename Key, typename Value>
-void MyHashMap<Key, Value>::delete_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod)
+int8_t MyHashMap<Key, Value>::delete_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod)
 {
     LOG_DEBUG();
-    MyHashMapNode<Key, Value>* curr = buckets[mod];// TODO null check
-    curr->remove(key, hash_val);
+    MyHashMapNode<Key, Value>* curr = buckets[mod];
+    return curr->remove(key, hash_val);
 }
 
 template<typename Key, typename Value>
@@ -306,7 +305,7 @@ void MyHashMap<Key, Value>::create_buckets(int num_buckets_)
     buckets = new MyHashMapNode<Key, Value>*[num_buckets_]();
     for(int i = 0; i < num_buckets_; i++)
     {
-        buckets[i] = new MyHashMapNode<Key, Value>(); //TODO nullptr
+        buckets[i] = new MyHashMapNode<Key, Value>();
     }
 }
 

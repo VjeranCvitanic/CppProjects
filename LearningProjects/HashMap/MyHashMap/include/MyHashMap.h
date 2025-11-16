@@ -1,7 +1,10 @@
 #ifndef _MyHashMap_
 #define _MyHashMap_
 
+#include <cstdint>
+#include <cstddef>
 #include <iostream>
+#include <cstdlib>
 #include "MyHashMapNode.h"
 #include "Logger.h"
 
@@ -51,10 +54,10 @@ private:
     void do_Add(const Key& key, const Value& value);
     void do_Add(MyHashMapNode<Key, Value>* other);
 
-    void add_to_bucket(const Key& key, const Value& val, const size_t& hash_val, const size_t& mod);
-    void add_to_bucket(MyHashMapNode<Key, Value>* new_node, int mod);
+    int8_t add_to_bucket(const Key& key, const Value& val, const size_t& hash_val, const size_t& mod);
+    int8_t add_to_bucket(MyHashMapNode<Key, Value>* new_node, int mod);
     Value* get_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod);
-    void delete_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod);
+    int8_t delete_from_bucket(const Key& key, const size_t& hash_val, const size_t& mod);
     void delete_all_buckets();
     void copy_all_buckets(MyHashMapNode<Key, Value>** buckets_);
     void copy_buckets(MyHashMapNode<Key, Value>** buckets_new_buckets, MyHashMapNode<Key, Value>** buckets_other_buckets);

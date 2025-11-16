@@ -88,19 +88,45 @@ MyHashMapNode<Key, Value>* MyHashMapNode<Key, Value>::getNext() const
 }
 
 template <typename Key, typename Value>
-void MyHashMapNode<Key, Value>::insert(const Key& key, const Value& val, const size_t& hash_val)
+void MyHashMapNode<Key, Value>::setValue(Value val)
 {
-    LOG_INFO();
-    MyHashMapNode<Key, Value>* prev = find_prev_or_last(key, hash_val);
-    prev->next = new MyHashMapNode<Key, Value>(key, val, hash_val, prev->next);
+    this->value = val;
 }
 
 template <typename Key, typename Value>
-void MyHashMapNode<Key, Value>::insert(MyHashMapNode<Key, Value>* new_node)
+Key MyHashMapNode<Key, Value>::getKey()
+{
+    return key;
+}
+
+template <typename Key, typename Value>
+int8_t MyHashMapNode<Key, Value>::insert(const Key& key, const Value& val, const size_t& hash_val)
+{
+    LOG_INFO();
+    MyHashMapNode<Key, Value>* prev = find_prev_or_last(key, hash_val);
+    if(prev->next && prev->next->getKey() == key)
+    {
+        LOG_INFO("Updating element key: ", key);
+        prev->next->setValue(val);
+        return EXIT_FAILURE;
+    }
+    prev->next = new MyHashMapNode<Key, Value>(key, val, hash_val, prev->next);
+    return EXIT_SUCCESS;
+}
+
+template <typename Key, typename Value>
+int8_t MyHashMapNode<Key, Value>::insert(MyHashMapNode<Key, Value>* new_node)
 {
     LOG_INFO("ptr");
     MyHashMapNode<Key, Value>* prev = find_prev_or_last(key, new_node->hash_value);
+    if(prev->next && prev->next->getKey() == key)
+    {
+        LOG_INFO("Updating element key: ", key);
+        prev->next->setValue(new_node->value);
+        return EXIT_FAILURE;
+    }
     prev->next = new MyHashMapNode<Key, Value>(new_node->key, new_node->value, new_node->hash_value, prev->next);
+    return EXIT_SUCCESS;
 }
 
 template <typename Key, typename Value>
@@ -120,7 +146,7 @@ Value* MyHashMapNode<Key, Value>::get(const Key& key, const size_t& hash_val)
 }
 
 template <typename Key, typename Value>
-void MyHashMapNode<Key, Value>::remove(const Key& key, const size_t& hash_val)
+int8_t MyHashMapNode<Key, Value>::remove(const Key& key, const size_t& hash_val)
 {
     LOG_INFO();
     MyHashMapNode<Key, Value>* prev = find_prev(key, hash_val);
@@ -128,12 +154,13 @@ void MyHashMapNode<Key, Value>::remove(const Key& key, const size_t& hash_val)
     {
         LOG_WARNING("Element not existent in the map");
         LOG_VAR(key, hash_val);
-        return;
+        return EXIT_FAILURE;
     }
     MyHashMapNode<Key, Value>* del = prev->next;
     prev->next = del->next;
     LOG_VAR(del->key, del->value, del->hash_value, del->next);
     delete del;
+    return EXIT_SUCCESS;
 }
 
 template <typename Key, typename Value>

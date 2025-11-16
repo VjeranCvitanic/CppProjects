@@ -43,19 +43,21 @@ int main()
 }
 
 // TODO:
-//      - log rotation
 //      - measure speed of insert, get operations
 //      - RAII
 //      - smart pointers
 //      - tests
+//      - enumerate return values
 //
 //
 // Postponed:
 //      - node heads on stack instead of heap (for less dynamic alloc) - cant do on stack -> options: A) vector<MyHashMApNode*>                                                                                                B) heads are actual elements
 //      - key and hash_value - redundancy
+//      - log rotation
 //
 //
 // DONE:
 //      - dynamic bucket size, rehashing, reserve(int expected_num_of_elems)
 //      - recursion when constructing Node
+//      - insert already existing key
 //

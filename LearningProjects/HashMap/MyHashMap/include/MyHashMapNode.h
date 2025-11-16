@@ -2,6 +2,7 @@
 #define _MyHashMapNode_
 
 #include <iostream>
+#include <cstdlib>
 #include "Logger.h"
 
 template<typename Key, typename Value>
@@ -21,11 +22,13 @@ public:
     ~MyHashMapNode<Key, Value>();
 
     MyHashMapNode<Key, Value>* getNext() const;
+    void setValue(Value val);
+    Key getKey();
 
-    void insert(const Key& key, const Value& val, const size_t& hash_val);
-    void insert(MyHashMapNode<Key, Value>* new_node);
+    int8_t insert(const Key& key, const Value& val, const size_t& hash_val);
+    int8_t insert(MyHashMapNode<Key, Value>* new_node);
     Value* get(const Key& key, const size_t& hash_val);
-    void remove(const Key& key, const size_t& hash_val);
+    int8_t remove(const Key& key, const size_t& hash_val);
 
     void Print();
 private:
