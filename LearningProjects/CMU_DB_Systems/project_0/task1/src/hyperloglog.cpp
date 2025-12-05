@@ -1,6 +1,5 @@
 #include "../inc/hyperloglog.h"
-#include <bitset>
-#include <cstddef>
+#include <cstdint>
 
 hyperloglog::hyperloglog(int b) :
     num_starting_bits(b)
@@ -36,7 +35,7 @@ int hyperloglog::PositionOfLeftMostOne(uint64_t hash_val)
     return j - i + 1;
 }
 
-int hyperloglog::PositionOfRightMostOne(std::bitset<SIZE> bitnum)
+int hyperloglog::CountOfTrailingZeroes(std::bitset<SIZE> bitnum)
 {
     int i = 0;
     for(; i < SIZE && bitnum[i] == 0; i++);
@@ -66,7 +65,7 @@ uint64_t hyperloglog::ComputeCardinality()
 
     double retval = alpha * num_buckets * num_buckets / res;
 
-    return static_cast<uint64_t>(retval);
+    return static_cast<uint64_t>(std::floor(retval));
 }
 
 uint64_t hyperloglog::GetCardinality()

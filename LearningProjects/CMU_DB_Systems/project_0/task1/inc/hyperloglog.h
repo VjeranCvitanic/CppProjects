@@ -27,5 +27,5 @@ private:
     uint64_t ComputeCardinality();
     uint64_t CalculateHash(uint64_t);
     int PositionOfLeftMostOne(uint64_t);
-    int PositionOfRightMostOne(std::bitset<SIZE> bitnum);
+    int CountOfTrailingZeroes(std::bitset<SIZE> bitnum);
 };
