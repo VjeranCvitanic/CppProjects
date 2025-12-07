@@ -1,16 +1,17 @@
 #include "../inc/Board.h"
+#include <cstdio>
 
 int main()
 {
+    // Set UTF-8 output encoding (Windows)
+    #ifdef _WIN32
+        system("chcp 65001 > nul");
+    #endif
+
     Board board;
-    board.printBoard(board.bitmaps[white_pieces]);
 
-    //for(int i = 0; i < 64; i++)
-      //  Board::printBoard(board.rook_move_mask((Square)i));
-    
-    Board::printBoard(~board.bitmaps[all_pieces] & board.rook_move_mask(e4));
+    board.initialize();
 
-    Board::printBoard(board.get_occupancy(255, board.rook_move_mask(a1)));
+    print(board.is_square_attacked(d3, black));
 
-    Board::printBoard(board.random_64() & board.random_64() & board.random_64());
 }
