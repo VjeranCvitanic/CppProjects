@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <iostream>
 
 typedef unsigned long U32;
@@ -13,4 +14,6 @@ void print(T data)
     std::cout << data;
 }
 
+void print(int8_t data);
+void print(uint8_t data);
 void newLine();

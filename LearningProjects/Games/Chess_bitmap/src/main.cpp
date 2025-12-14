@@ -1,4 +1,5 @@
 #include "../inc/Board.h"
+#include <cstdint>
 #include <cstdio>
 
 int main()
@@ -8,10 +9,15 @@ int main()
         system("chcp 65001 > nul");
     #endif
 
-    Board board;
+    Board board;//fen[0]);
+
+    board.printAdditionalInfo();
 
     board.initialize();
 
-    print(board.is_square_attacked(d3, black));
+    board.printBoardSymbols();
 
+    board.generate_pseudo_legal_moves();
+
+    board.printPseudoLegalMoves();
 }

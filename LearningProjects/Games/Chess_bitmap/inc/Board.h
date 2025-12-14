@@ -2,6 +2,9 @@
 #include "Utils.h"
 #include <cstdint>
 #include <random>
+#include <tuple>
+#include <vector>
+
 
 #define a_file 0x8080808080808080
 #define h_file 0x0101010101010101
@@ -16,6 +19,30 @@
 #define rank_7 0x000000000000ff00
 #define rank_8 0x00000000000000ff
 
+//#define _PRECOMPUTED_MAGIC_NUMBERS_
+
+static char fen[][300] = {"r3kP1r/p2pBpNp/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
+    "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0"};
+
+/*
+uint32_t move
+
+0000 0000 0000 0000 0000 0000 0000 0000       total (32 bits)
+                                11 1111       source square (6 bits)
+                         1111 11              destination square (6 bits)
+                       1                      side (1 bit)
+                    111                       piece moved (3 bits)
+                  1                           is promotion (1 bit)
+               111                            promotion piece (3 bits)
+             1                                is capture (1 bit)
+          111                                 captured piece (3 bits)
+        1                                     double pawn push flag (1 bit)   - redundant
+       1                                      en passant capture flag (1 bit)
+      1                                       is castling move flag (1 bit)
+   1 1                                        castling flag (2 bits)
+xxx                                           unused (3 bits)
+*/
+
 enum Color{
     white = 0,
     black = 1
@@ -24,6 +51,15 @@ enum Color{
 enum SliderPiece{
     rook = 0,
     bishop
+};
+
+enum Piece{
+    P = 0,
+    N,
+    B,
+    R,
+    Q,
+    K
 };
 
 enum bitmap_enum
@@ -38,6 +74,13 @@ enum bitmap_enum
     kings
 };
 
+enum CastlingRights{
+    white_kingside  = 0b1000,
+    white_queenside = 0b0100,
+    black_kingside  = 0b0010,
+    black_queenside = 0b0001
+};
+
 enum Square
 {
     h8 = 0, g8, f8, e8, d8, c8, b8, a8,
@@ -47,18 +90,33 @@ enum Square
     h4, g4, f4, e4, d4, c4, b4, a4,
     h3, g3, f3, e3, d3, c3, b3, a3,
     h2, g2, f2, e2, d2, c2, b2, a2,
-    h1, g1, f1, e1, d1, c1, b1, a1
+    h1, g1, f1, e1, d1, c1, b1, a1, no_square
 };
+
+typedef uint32_t Move;
+typedef std::tuple<Square, Square> MoveTuple;
+
+typedef struct {
+    Move moves[256];
+
+    int count;
+} moves;
 
 class Board
 {
 public:
     Board();
-    Board(char* fenPosition); // TODO
+    Board(char* fenPosition);
+
+    int8_t parseFen(char* fenPosition);
+    void parseFenAdditionalInfo(char* fenPositionAdditionalInfo);
+    int8_t set_char_to_bitmap(char c, int8_t index);
+
+    std::vector<MoveTuple> pseudoLegalMoves;
 
     // move bitmaps
     U64 pawn_attack_mask(Square, Color);
-    //U64 pawn_advance_mask(Square, Color);
+    U64 pawn_advance_moves(Square, Color);
     U64 knight_move_mask(Square square);
     U64 king_move_mask(Square square);
     U64 bishop_move_mask(Square square);
@@ -66,6 +124,8 @@ public:
 
     U64 bishop_moves_on_the_fly(Square square, U64 board);
     U64 rook_moves_on_the_fly(Square square, U64 board);
+
+    void generate_pseudo_legal_moves();
 
     void calculate_magic_numbers(SliderPiece piece_type);
     U64 calculate_magic_number(SliderPiece piece_type, Square square);
@@ -90,7 +150,13 @@ public:
     U64 rook_masks[64];
 
     U64 rook_attacks[64][4096];
-    U64 bishop_attacks[64][1024];
+    U64 bishop_attacks[64][512];
+
+    uint8_t halfmove_clock;
+    uint8_t fullmove_number;
+    Color side_to_move;
+    int8_t castling_rights; // 4 bits: white KQ, black kq
+    Square en_passant_square;
 
     constexpr static char unicode_symbols[][7] = {
         "♔","♕","♖","♗","♘","♙",  //  WHITE k q r b k p
@@ -233,6 +299,14 @@ public:
         9042539394900032ULL
     };
 
+#ifdef _PRECOMPUTED_MAGIC_NUMBERS_
+    const U64* magic_numbers_rook_ptr = magic_numbers_rook_precomputed;
+    const U64* magic_numbers_bishop_ptr = magic_numbers_bishop_precomputed;
+#else
+    const U64* magic_numbers_rook_ptr = magic_numbers_rook;
+    const U64* magic_numbers_bishop_ptr = magic_numbers_bishop;
+#endif
+
     void initialize();
 
     void initialize_attacks();
@@ -260,6 +334,11 @@ public:
     static void printBoardBits(U64 board);
     void printBoardSymbols();
     void printAllBoards() const;
+    void printAdditionalInfo();
+    void printPseudoLegalMoves();
+
+    std::string SquareToRankFile(Square square);
+    Square RankFileToSquare(char file, char rank);
 
     U64 get_occupancy(uint16_t key, U64 attack_mask);
     U32 random_32();
@@ -267,4 +346,10 @@ public:
     U64 sparse_random_64();
 
     Color otherColor(Color color);
+
+    U64 all_pieces_bitmap();
+
+    bool verify_magics(SliderPiece piece, Square square);
+
+    bool verify_all_magics();
 };
