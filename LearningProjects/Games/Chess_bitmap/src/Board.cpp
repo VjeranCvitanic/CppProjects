@@ -4,6 +4,7 @@
 #include <cstring>
 #include <exception>
 #include <ostream>
+#include <vector>
 
 Board::Board()
 {
@@ -689,11 +690,11 @@ void Board::printBoardSymbols()
                 Square sq = static_cast<Square>(row*8 + col);
                 if(getBit(bitmaps[c], sq))
                 {
-                    for(int8_t p = 0; p < 6; p++)
+                    for(int8_t p = P; p <= K; p++)
                     {
-                        if(getBit(bitmaps[p+pawns], sq))
+                        if(getBit(bitmaps[p], sq))
                         {
-                            piece =  -1 * p + (11 - c * 6);
+                            piece =  -1 * (p-P) + (11 - c * 6);
                             break;
                         }
                     }
@@ -745,6 +746,69 @@ void Board::printAdditionalInfo()
     print("Fullmove number: ");
     print(fullmove_number);
     newLine();
+}
+
+void Board::printDecodedMove(Move move)
+{
+    Square from = decode_square_from_move(move, true);
+    Square to = decode_square_from_move(move, false);
+    Color side = decode_side_to_move_from_move(move);
+    Piece moved_piece = decode_moved_piece_from_move(move);
+    Piece promotion_piece = decode_promoted_piece_from_move(move);
+    Piece captured_piece = decode_captured_piece_from_move(move);
+    CastlingRights castling = decode_castling_move(move);
+    bool is_en_passant = decode_is_en_passant_move(move);
+
+    print("Move: ");
+    print(SquareToRankFile(from));
+    print(" -> ");
+    print(SquareToRankFile(to));
+    print(", Side: ");
+    print(side == white ? "White" : "Black");
+    print(", Moved piece: ");
+    print(pieceToChar(moved_piece, side));
+    if(captured_piece != NoPiece)
+    {
+        print(", Captured piece: ");
+        print(pieceToChar(captured_piece, otherColor(side)));
+    }
+    if(promotion_piece != NoPiece)
+    {
+        print(", Promotion to: ");
+        print(pieceToChar(promotion_piece, side));
+    }
+    if(is_en_passant)
+    {
+        print(", En passant");
+    }
+    if(castling != no_castling)
+    {
+        print(", Castling: ");
+        if(castling & white_kingside) print("White kingside ");
+        if(castling & white_queenside) print("White queenside ");
+        if(castling & black_kingside) print("Black kingside ");
+        if(castling & black_queenside) print("Black queenside ");
+    }
+
+    newLine();
+}
+
+char Board::pieceToChar(Piece piece, Color color)
+{
+    char c;
+    switch(piece)
+    {
+        case P: c = 'p'; break;
+        case N: c = 'n'; break;
+        case B: c = 'b'; break;
+        case R: c = 'r'; break;
+        case Q: c = 'q'; break;
+        case K: c = 'k'; break;
+        default: c = '.'; break;
+    }
+    if(color == white)
+        c = toupper(c);
+    return c;
 }
 
 bool Board::is_square_attacked(Square square, Color byColor)
@@ -810,7 +874,7 @@ void Board::generate_pseudo_legal_moves()
         }
         else if(getBit(bitmaps[rooks], from_square))
         {
-            move_mask = get_rook_attack(from_square, all_pieces_bitmap());//<& ~bitmaps[side_to_move];
+            move_mask = get_rook_attack(from_square, all_pieces_bitmap()) & ~bitmaps[side_to_move];
         }
         else if(getBit(bitmaps[queens], from_square))
         {
@@ -864,19 +928,121 @@ void Board::generate_pseudo_legal_moves()
     }
 }
 
-void Board::printPseudoLegalMoves()
+Move Board::encode_pseudo_legal_move(Square from_square, Square to_square)
 {
-    print("Pseudo-legal moves:\n");
-    for(const auto& move : pseudoLegalMoves)
+    CastlingRights castle = no_castling;
+    if(getBit(bitmaps[kings], from_square))
     {
-        Square from = std::get<0>(move);
-        Square to = std::get<1>(move);
-
-        print(SquareToRankFile(from));
-        print(" -> ");
-        print(SquareToRankFile(to));
-        newLine();
+        if(side_to_move == white)
+        {
+            if(from_square == e1 && to_square == g1)
+                castle = white_kingside;
+            else if(from_square == e1 && to_square == c1)
+                castle = white_queenside;
+        }
+        else
+        {
+            if(from_square == e8 && to_square == g8)
+                castle = black_kingside;
+            else if(from_square == e8 && to_square == c8)
+                castle = black_queenside;
+        }
     }
+
+    Piece moved_piece = get_piece_on_square(from_square);
+    Piece captured_piece = get_piece_on_square(to_square);
+
+    return encode_move(from_square, to_square,
+                                        side_to_move,
+                                        moved_piece,
+                                        captured_piece,
+                                        NoPiece,
+                                        ((to_square == en_passant_square) && (moved_piece == P)),
+                                        castle);
+}
+
+Piece Board::get_piece_on_square(Square square)
+{
+    for(int8_t c = white_pieces; c <= black_pieces; c++)
+    {
+        if(getBit(bitmaps[c], square))
+        {
+            for(int8_t p = P; p <= K; p++)
+            {
+                if(getBit(bitmaps[p], square))
+                {
+                    return static_cast<Piece>(p);
+                }
+            }
+        }
+    }
+    return NoPiece;
+}
+
+void Board::encode_pseudo_legal_moves()
+{
+    encodedPseudoLegalMoves.clear();
+
+    for(const auto& move_tuple : pseudoLegalMoves)
+    {
+        Square from_square = std::get<0>(move_tuple);
+        Square to_square = std::get<1>(move_tuple);
+
+        encodedPseudoLegalMoves.push_back(encode_pseudo_legal_move(from_square, to_square));
+    }
+}
+
+void Board::generate_legal_moves()
+{
+    generate_pseudo_legal_moves();
+    encode_pseudo_legal_moves();
+
+    legalMoves.clear();
+
+    for(std::vector<Move>::iterator it = encodedPseudoLegalMoves.begin(); it != encodedPseudoLegalMoves.end(); it++)
+    {
+        BoardState saved_state = save_board_state();
+
+        make_move(*it);
+
+        Square king_square = static_cast<Square>(lsb_position(bitmaps[kings] & bitmaps[side_to_move]));
+
+        if(!is_square_attacked(king_square, otherColor(side_to_move)))
+        {
+            if(decode_castling_move(*it) != no_castling)
+            {                
+                Square curr_square = decode_square_from_move(*it, false);
+                Square through_square = (curr_square == g1) ? f1 :
+                                       (curr_square == c1) ? d1 :
+                                       (curr_square == g8) ? f8 : d8;
+                if(is_square_attacked(through_square, otherColor(side_to_move)) || is_square_attacked(curr_square, otherColor(side_to_move)))
+                {
+                    restore_board_state(std::move(saved_state));
+                    continue;
+                }
+            }
+            legalMoves.push_back(*it);
+        }
+
+        restore_board_state(std::move(saved_state));
+    }
+}
+
+void Board::printLegalMoves()
+{
+    print("Legal moves:\n");
+    for(const auto& move : legalMoves)
+    {
+        printMove(move);
+    }
+}
+
+void Board::printMove(Move move)
+{
+    print(SquareToRankFile(decode_square_from_move(move, true)));
+    print(" -> ");
+    print(SquareToRankFile(decode_square_from_move(move, false)));
+    newLine();
 }
 
 std::string Board::SquareToRankFile(Square square)
@@ -956,3 +1122,170 @@ bool Board::verify_all_magics()
     return true;
 }
 
+Square Board::decode_square_from_move(Move move, bool is_from)
+{
+    return static_cast<Square>(is_from ? (move & 0x3f) : ((move >> 6) & 0x3f));
+}
+Color Board::decode_side_to_move_from_move(Move move)
+{
+    return static_cast<Color>((move >> 12) & 0x1);
+}
+Piece Board::decode_moved_piece_from_move(Move move)
+{
+    return static_cast<Piece>((move >> 13) & 0x7);
+}
+Piece Board::decode_captured_piece_from_move(Move move)
+{
+    return static_cast<Piece>((move >> 16) & 0x7);
+}
+Piece Board::decode_promoted_piece_from_move(Move move)
+{
+    return static_cast<Piece>((move >> 19) & 0x7);
+}
+bool Board::decode_is_en_passant_move(Move move)
+{
+    return (move >> 22) & 0x1;
+}
+CastlingRights Board::decode_castling_move(Move move)
+{
+
+    return static_cast<CastlingRights>((move >> 23) & 0x7);
+}
+
+Move Board::encode_move(Square from, Square to, Color side,
+                        Piece moved_piece,
+                        Piece captured_piece,
+                        Piece promotion_piece,
+                        bool is_en_passant,
+                        CastlingRights castling)
+{
+    Move move = 0;
+    move |= static_cast<Move>(from);
+    move |= static_cast<Move>(to) << 6;
+    move |= static_cast<Move>(side) << 12;
+    move |= static_cast<Move>(moved_piece) << 13;
+
+    move |= static_cast<Move>(captured_piece) << 16;
+    move |= static_cast<Move>(promotion_piece) << 19;
+    if(is_en_passant)
+    {
+        move |= C64(1) << 22;
+    }
+    else {
+        move &= ~(C64(1) << 22);
+    }
+    if(castling != no_castling)
+    {
+        move |= static_cast<Move>(castling) << 23;
+    }
+    return move;
+}
+
+BoardState Board::save_board_state()
+{
+    BoardState state;
+    // Implementation to save the current board state into 'state'
+    memcpy(state.bitmaps, bitmaps, sizeof(bitmaps));
+    state.castling_rights = castling_rights;
+    state.en_passant_square = en_passant_square;
+    state.side_to_move = side_to_move;
+    return state;
+}
+void Board::restore_board_state(BoardState&& state)
+{
+    memcpy(bitmaps, state.bitmaps, sizeof(bitmaps));
+    castling_rights = state.castling_rights;
+    en_passant_square = state.en_passant_square;
+    side_to_move = state.side_to_move;
+}
+
+void Board::make_move(Move move)
+{
+    Piece captured = decode_captured_piece_from_move(move);
+    Piece moved = decode_moved_piece_from_move(move);
+    Square from = decode_square_from_move(move, true);
+    Square to = decode_square_from_move(move, false);
+    Color side = decode_side_to_move_from_move(move);
+    Piece promoted = decode_promoted_piece_from_move(move);
+    bool is_en_passant = decode_is_en_passant_move(move);
+    CastlingRights castling = decode_castling_move(move);
+
+    printDecodedMove(move);
+    newLine();
+    print(promoted);
+    newLine();
+
+    if(captured != NoPiece)
+    {
+        if(is_en_passant)
+        {
+            if(side == white)
+            {
+                clearBit(bitmaps[pawns], static_cast<Square>(to + 8));
+                clearBit(bitmaps[black_pieces], static_cast<Square>(to + 8));
+            }
+            else
+            {
+                clearBit(bitmaps[pawns], static_cast<Square>(to - 8));
+                clearBit(bitmaps[white_pieces], static_cast<Square>(to - 8));
+            }
+        }
+        else
+        {
+            clearBit(bitmaps[captured], to);
+            clearBit(bitmaps[side == white ? black_pieces : white_pieces], to);
+        }
+    }
+    
+    clearBit(bitmaps[side], from);
+    clearBit(bitmaps[moved], from);
+
+    if(promoted != NoPiece)
+    {
+        setBit(bitmaps[promoted], to);
+        setBit(bitmaps[side], to);
+    }
+    else {
+        if(moved == K)
+        {
+            print("King moved from ");
+            print(SquareToRankFile(from));
+            print(" to ");
+            print(SquareToRankFile(to));
+        }
+        setBit(bitmaps[moved], to);
+        setBit(bitmaps[side], to);
+    }
+
+    if(castling != no_castling)
+    {
+        if(castling & white_kingside)
+        {
+            clearBit(bitmaps[rooks], h1);
+            clearBit(bitmaps[white_pieces], h1);
+            setBit(bitmaps[rooks], f1);
+            setBit(bitmaps[white_pieces], f1);
+        }
+        else if(castling & white_queenside)
+        {
+            clearBit(bitmaps[rooks], a1);
+            clearBit(bitmaps[white_pieces], a1);
+            setBit(bitmaps[rooks], d1);
+            setBit(bitmaps[white_pieces], d1);
+        }
+        else if(castling & black_kingside)
+        {
+            clearBit(bitmaps[rooks], h8);
+            clearBit(bitmaps[black_pieces], h8);
+            setBit(bitmaps[rooks], f8);
+            setBit(bitmaps[black_pieces], f8);
+        }
+        else if(castling & black_queenside)
+        {
+            clearBit(bitmaps[rooks], a8);
+            clearBit(bitmaps[black_pieces], a8);
+            setBit(bitmaps[rooks], d8);
+            setBit(bitmaps[black_pieces], d8);
+        }
+    }
+}

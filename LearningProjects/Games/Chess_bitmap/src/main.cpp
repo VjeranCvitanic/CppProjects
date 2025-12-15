@@ -9,7 +9,7 @@ int main()
         system("chcp 65001 > nul");
     #endif
 
-    Board board;//fen[0]);
+    Board board(fen[0]);
 
     board.printAdditionalInfo();
 
@@ -17,7 +17,9 @@ int main()
 
     board.printBoardSymbols();
 
-    board.generate_pseudo_legal_moves();
+    board.generate_legal_moves();
 
-    board.printPseudoLegalMoves();
+    board.printLegalMoves();
+
+    board.printBoardSymbols();
 }

@@ -21,7 +21,7 @@
 
 //#define _PRECOMPUTED_MAGIC_NUMBERS_
 
-static char fen[][300] = {"r3kP1r/p2pBpNp/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
+static char fen[][300] = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
     "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0"};
 
 /*
@@ -32,15 +32,11 @@ uint32_t move
                          1111 11              destination square (6 bits)
                        1                      side (1 bit)
                     111                       piece moved (3 bits)
-                  1                           is promotion (1 bit)
-               111                            promotion piece (3 bits)
-             1                                is capture (1 bit)
-          111                                 captured piece (3 bits)
-        1                                     double pawn push flag (1 bit)   - redundant
-       1                                      en passant capture flag (1 bit)
-      1                                       is castling move flag (1 bit)
-   1 1                                        castling flag (2 bits)
-xxx                                           unused (3 bits)
+                111                           captured piece (3 bits)
+            11 1                              promoted piece (3 bits)
+           1                                  en passant capture flag (1 bit)
+      111 1                                   castling flag (4 bits)
+xxxx x                                        unused (5 bits)
 */
 
 enum Color{
@@ -51,15 +47,6 @@ enum Color{
 enum SliderPiece{
     rook = 0,
     bishop
-};
-
-enum Piece{
-    P = 0,
-    N,
-    B,
-    R,
-    Q,
-    K
 };
 
 enum bitmap_enum
@@ -74,11 +61,27 @@ enum bitmap_enum
     kings
 };
 
+enum Piece{
+    P = pawns,
+    N,
+    B,
+    R,
+    Q,
+    K,
+    NoPiece
+};
+
+constexpr static char unicode_symbols[][7] = {
+        "♔","♕","♖","♗","♘","♙",  //  WHITE k q r b k p
+        "♚","♛","♜","♝","♞","♟︎"   //  BLACK k q r b k p
+    };
+
 enum CastlingRights{
     white_kingside  = 0b1000,
     white_queenside = 0b0100,
     black_kingside  = 0b0010,
-    black_queenside = 0b0001
+    black_queenside = 0b0001,
+    no_castling     = 0b0000
 };
 
 enum Square
@@ -96,11 +99,12 @@ enum Square
 typedef uint32_t Move;
 typedef std::tuple<Square, Square> MoveTuple;
 
-typedef struct {
-    Move moves[256];
-
-    int count;
-} moves;
+struct BoardState {
+    U64 bitmaps[9];
+    Color side_to_move;
+    int8_t castling_rights;
+    Square en_passant_square;
+};
 
 class Board
 {
@@ -112,7 +116,10 @@ public:
     void parseFenAdditionalInfo(char* fenPositionAdditionalInfo);
     int8_t set_char_to_bitmap(char c, int8_t index);
 
-    std::vector<MoveTuple> pseudoLegalMoves;
+    std::vector<std::tuple<Square, Square>> pseudoLegalMoves;
+    std::vector<Move> legalMoves;
+    std::vector<Move> encodedPseudoLegalMoves;
+
 
     // move bitmaps
     U64 pawn_attack_mask(Square, Color);
@@ -126,11 +133,36 @@ public:
     U64 rook_moves_on_the_fly(Square square, U64 board);
 
     void generate_pseudo_legal_moves();
+    Move encode_pseudo_legal_move(Square from_square, Square to_square);
+    void encode_pseudo_legal_moves();
+    void generate_legal_moves();
+
+    Piece get_piece_on_square(Square square);
 
     void calculate_magic_numbers(SliderPiece piece_type);
     U64 calculate_magic_number(SliderPiece piece_type, Square square);
 
     bool is_square_attacked(Square square, Color byColor);
+
+    void make_move(Move move);
+
+    BoardState save_board_state();
+    void restore_board_state(BoardState&& state);
+
+    Square decode_square_from_move(Move move, bool is_from_or_to);
+    Color decode_side_to_move_from_move(Move move);
+    Piece decode_moved_piece_from_move(Move move);
+    Piece decode_captured_piece_from_move(Move move);
+    Piece decode_promoted_piece_from_move(Move move);
+    bool decode_is_en_passant_move(Move move);
+    CastlingRights decode_castling_move(Move move);
+
+    Move encode_move(Square from, Square to, Color side,
+                        Piece moved_piece,
+                        Piece captured_piece = NoPiece,
+                        Piece promotion_piece = NoPiece,
+                        bool is_en_passant = false,
+                        CastlingRights castling = no_castling);
 
 //private:
     U64 bitmaps[9];
@@ -157,11 +189,6 @@ public:
     Color side_to_move;
     int8_t castling_rights; // 4 bits: white KQ, black kq
     Square en_passant_square;
-
-    constexpr static char unicode_symbols[][7] = {
-        "♔","♕","♖","♗","♘","♙",  //  WHITE k q r b k p
-        "♚","♛","♜","♝","♞","♟︎"   //  BLACK k q r b k p
-    };
 
     constexpr static U64 magic_numbers_rook_precomputed[] =
     {
@@ -335,7 +362,12 @@ public:
     void printBoardSymbols();
     void printAllBoards() const;
     void printAdditionalInfo();
-    void printPseudoLegalMoves();
+    void printLegalMoves();
+    void printDecodedMove(Move move);
+    void printMove(Move move);
+
+    char pieceToChar(Piece piece, Color color);
+
 
     std::string SquareToRankFile(Square square);
     Square RankFileToSquare(char file, char rank);
