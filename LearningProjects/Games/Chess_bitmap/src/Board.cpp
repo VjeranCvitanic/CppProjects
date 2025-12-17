@@ -1,9 +1,7 @@
 #include "../inc/Board.h"
 #include <cstdint>
-#include <cstdio>
 #include <cstring>
 #include <exception>
-#include <ostream>
 #include <vector>
 
 Board::Board()
@@ -962,19 +960,127 @@ Move Board::encode_pseudo_legal_move(Square from_square, Square to_square)
                                         castle);
 }
 
+bool Board::is_move_en_passant(Square from, Square to)
+{
+    if(get_piece_on_square(from) != P)
+        return false;
+    if(abs(static_cast<int8_t>(from) - static_cast<int8_t>(to)) > 8)
+        return true;
+    return false;
+}
+
+CastlingRights Board::get_castling(Square from, Square to)
+{
+    if(get_piece_on_square(from) != K)
+        return no_castling;
+    if(from == e1)
+    {
+        if(to == a1)
+            return white_queenside;
+        else if(to == h1)
+            return white_kingside;
+    }
+    else if(from == e8)
+    {
+        if(to == a8)
+            return black_queenside;
+        else if(to == h8)
+            return black_kingside;
+    }
+
+    return no_castling;
+}
+
+
+Move Board::encode_move(Square from, Square to, Piece promoted)
+{
+    return encode_move(from, to, side_to_move, get_piece_on_square(from), get_piece_on_square(to),
+                        promoted, is_move_en_passant(from, to), get_castling(from, to));
+}
+
+int8_t Board::UserMove(Square from, Square to, Piece promoted)
+{
+    if((from == to) && promoted == NoPiece) // user has to provide promoted piece type if promotion is played
+        return -1;
+    Move move = encode_move(from, to, side_to_move, promoted);
+    is_move_legal(move);
+    make_move(move);
+
+    return 0;
+}
+
+SquareTuple Board::parse_input_squares(char* input)
+{
+    if(!input) 
+        return { no_square, no_square };
+
+    // expect at least "e2e4"
+    if(std::strlen(input) < 4)
+        return { no_square, no_square };
+
+    Square from = RankFileToSquare(input[0], input[1]);
+    Square to   = RankFileToSquare(input[2], input[3]);
+
+    if(from == no_square || to == no_square)
+        return { no_square, no_square };
+
+    return std::make_tuple(from, to);
+}
+
+Piece Board::parse_input_promoted(char* input)
+{
+    if(!input) 
+        return NoPiece;
+
+    if(std::strlen(input) < 6)
+        return NoPiece;
+
+    switch(input[5])
+    {
+        case 'q': return Q;
+        case 'r': return R;
+        case 'b': return B;
+        case 'n': return N;
+        default:  return NoPiece;
+    }
+
+    return NoPiece;
+}
+
+// e2e4 / a7b8 Q (promotion)
+int8_t Board::UserMoveInterface(char* input)
+{
+    SquareTuple mt = parse_input_squares(input);
+    Square from = std::get<0>(mt);
+    Square to = std::get<1>(mt);
+    Piece promoted = NoPiece;
+
+    if(from == no_square)
+        return -1;
+    if(to == from || to == no_square)
+    {
+        promoted = parse_input_promoted(input);
+        if(promoted == NoPiece)
+            return -2;
+    }
+
+    return UserMove(from, to, promoted);
+}
+
+bool Board::is_move_legal(Move move)
+{
+    if(std::find(legalMoves.begin(), legalMoves.end(), move) != legalMoves.end())
+        return true;
+    return false;
+}
+
 Piece Board::get_piece_on_square(Square square)
 {
-    for(int8_t c = white_pieces; c <= black_pieces; c++)
+    for(int8_t p = P; p <= K; p++)
     {
-        if(getBit(bitmaps[c], square))
+        if(getBit(bitmaps[p], square))
         {
-            for(int8_t p = P; p <= K; p++)
-            {
-                if(getBit(bitmaps[p], square))
-                {
-                    return static_cast<Piece>(p);
-                }
-            }
+            return static_cast<Piece>(p);
         }
     }
     return NoPiece;
@@ -1011,7 +1117,8 @@ void Board::generate_legal_moves()
         Square king_square = static_cast<Square>(lsb);
         if(!is_square_attacked(king_square, otherColor(side_to_move)))
         {
-            if(decode_castling_move(*it) != no_castling)
+            CastlingRights castling = decode_castling_move(*it);
+            if(castling != no_castling)
             {
                 Square curr_square = decode_square_from_move(*it, false);
                 Square through_square = (curr_square == g1) ? f1 :
@@ -1022,6 +1129,12 @@ void Board::generate_legal_moves()
                     restore_board_state(std::move(saved_state));
                     continue;
                 }
+                if((castling & castling_rights) == 0)
+                {
+                    restore_board_state(std::move(saved_state));
+                    continue;
+                }
+
             }
             legalMoves.push_back(*it);
         }
@@ -1256,12 +1369,14 @@ void Board::make_move(Move move)
         if(promoted != NoPiece)
             setBit(bitmaps[promoted], to);
         else
-            setBit(bitmaps[P], to);
+            setBit(bitmaps[P], to); // "simulation" purposes
         setBit(bitmaps[side], to);
     }
     else {
         setBit(bitmaps[moved], to);
         setBit(bitmaps[side], to);
+        printBoardBits(bitmaps[moved]);
+        printBoardBits(bitmaps[side]);//wrong, also piece moved is wrong
     }
 
     if(castling != no_castling)

@@ -19,9 +19,9 @@
 #define rank_7 0x000000000000ff00
 #define rank_8 0x00000000000000ff
 
-//#define _PRECOMPUTED_MAGIC_NUMBERS_
+#define _PRECOMPUTED_MAGIC_NUMBERS_
 
-static char fen[][300] = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 w kq b6 0 0\0",
+static char fen[][300] = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
     "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0"};
 
 /*
@@ -97,7 +97,7 @@ enum Square
 };
 
 typedef uint32_t Move;
-typedef std::tuple<Square, Square> MoveTuple;
+typedef std::tuple<Square, Square> SquareTuple;
 
 struct BoardState {
     U64 bitmaps[9];
@@ -163,6 +163,16 @@ public:
                         Piece promotion_piece = NoPiece,
                         bool is_en_passant = false,
                         CastlingRights castling = no_castling);
+    Move encode_move(Square from, Square to, Piece promotion = NoPiece);
+    bool is_move_en_passant(Square from, Square to);
+    CastlingRights get_castling(Square from, Square to);
+    bool is_move_legal(Move move);
+
+    int8_t UserMoveInterface(char*);
+    SquareTuple parse_input_squares(char*);
+    Piece parse_input_promoted(char*);
+
+    int8_t UserMove(Square from, Square to, Piece promotion = NoPiece);
 
 //private:
     U64 bitmaps[9];

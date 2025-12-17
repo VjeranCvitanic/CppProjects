@@ -1,0 +1,44 @@
+cmake_minimum_required(VERSION 3.16)
+project(chess LANGUAGES CXX)
+
+# Fast compile defaults
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Common sources
+set(COMMON_SRC
+    src/Board.cpp
+    src/utils.cpp
+)
+
+# =========================
+# Main executable
+# =========================
+add_executable(chess
+    ${COMMON_SRC}
+    src/main.cpp
+)
+
+# Match: -Xlinker /STACK:0x1000000
+if (WIN32)
+    target_link_options(chess PRIVATE
+        "/STACK:0x1000000"
+    )
+endif()
+
+set_target_properties(chess PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out
+)
+
+# =========================
+# Test executable
+# =========================
+add_executable(test_chess
+    ${COMMON_SRC}
+    test/test_src/test_src.cpp
+)
+
+set_target_properties(test_chess PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test/out
+)
