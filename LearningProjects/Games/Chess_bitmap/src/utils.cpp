@@ -1,4 +1,5 @@
 #include "../inc/Utils.h"
+#include <cstdint>
 
 void newLine()
 {
@@ -14,3 +15,4 @@ void print(uint8_t data)
 {
     std::cout << +data;
 }
+

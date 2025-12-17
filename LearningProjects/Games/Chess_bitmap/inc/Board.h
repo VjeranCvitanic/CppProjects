@@ -21,7 +21,7 @@
 
 //#define _PRECOMPUTED_MAGIC_NUMBERS_
 
-static char fen[][300] = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
+static char fen[][300] = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 w kq b6 0 0\0",
     "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0"};
 
 /*
@@ -68,7 +68,7 @@ enum Piece{
     R,
     Q,
     K,
-    NoPiece
+    NoPiece = 0
 };
 
 constexpr static char unicode_symbols[][7] = {
@@ -149,15 +149,15 @@ public:
     BoardState save_board_state();
     void restore_board_state(BoardState&& state);
 
-    Square decode_square_from_move(Move move, bool is_from_or_to);
-    Color decode_side_to_move_from_move(Move move);
-    Piece decode_moved_piece_from_move(Move move);
-    Piece decode_captured_piece_from_move(Move move);
-    Piece decode_promoted_piece_from_move(Move move);
-    bool decode_is_en_passant_move(Move move);
-    CastlingRights decode_castling_move(Move move);
+    static Square decode_square_from_move(Move move, bool is_from_or_to);
+    static Color decode_side_to_move_from_move(Move move);
+    static Piece decode_moved_piece_from_move(Move move);
+    static Piece decode_captured_piece_from_move(Move move);
+    static Piece decode_promoted_piece_from_move(Move move);
+    static bool decode_is_en_passant_move(Move move);
+    static CastlingRights decode_castling_move(Move move);
 
-    Move encode_move(Square from, Square to, Color side,
+    static Move encode_move(Square from, Square to, Color side,
                         Piece moved_piece,
                         Piece captured_piece = NoPiece,
                         Piece promotion_piece = NoPiece,
@@ -365,6 +365,7 @@ public:
     void printLegalMoves();
     void printDecodedMove(Move move);
     void printMove(Move move);
+    void printSquare(Square square);
 
     char pieceToChar(Piece piece, Color color);
 

@@ -772,8 +772,9 @@ void Board::printDecodedMove(Move move)
         print(", Captured piece: ");
         print(pieceToChar(captured_piece, otherColor(side)));
     }
-    if(promotion_piece != NoPiece)
+    if(from == to)
     {
+        promotion_piece = promotion_piece == NoPiece ? P : promotion_piece;
         print(", Promotion to: ");
         print(pieceToChar(promotion_piece, side));
     }
@@ -859,9 +860,9 @@ void Board::generate_pseudo_legal_moves()
                 if(pawn_attack_mask(en_passant_square, otherColor(side_to_move)) & (C64(1) << from_square))
                     move_mask |= (C64(1) << en_passant_square);
             }
-            if((side_to_move == white && rank_8 & (C64(1) << from_square)) || (side_to_move == black && rank_1 & (C64(1) << from_square)))
+            if((side_to_move == white && (rank_8 & (C64(1) << from_square))) || (side_to_move == black && (rank_1 & (C64(1) << from_square))))
             {
-                pseudoLegalMoves.push_back(std::make_tuple(from_square, no_square));
+                pseudoLegalMoves.push_back(std::make_tuple(from_square, from_square)); //promotion
             }
         }
         else if(getBit(bitmaps[knights], from_square))
@@ -950,7 +951,7 @@ Move Board::encode_pseudo_legal_move(Square from_square, Square to_square)
     }
 
     Piece moved_piece = get_piece_on_square(from_square);
-    Piece captured_piece = get_piece_on_square(to_square);
+    Piece captured_piece = from_square == to_square ? NoPiece : get_piece_on_square(to_square);
 
     return encode_move(from_square, to_square,
                                         side_to_move,
@@ -1005,12 +1006,13 @@ void Board::generate_legal_moves()
 
         make_move(*it);
 
-        Square king_square = static_cast<Square>(lsb_position(bitmaps[kings] & bitmaps[side_to_move]));
+        int lsb = lsb_position(bitmaps[kings] & bitmaps[side_to_move]);
 
+        Square king_square = static_cast<Square>(lsb);
         if(!is_square_attacked(king_square, otherColor(side_to_move)))
         {
             if(decode_castling_move(*it) != no_castling)
-            {                
+            {
                 Square curr_square = decode_square_from_move(*it, false);
                 Square through_square = (curr_square == g1) ? f1 :
                                        (curr_square == c1) ? d1 :
@@ -1043,6 +1045,20 @@ void Board::printMove(Move move)
     print(" -> ");
     print(SquareToRankFile(decode_square_from_move(move, false)));
     newLine();
+}
+
+void Board::printSquare(Square square)
+{
+    if(square == no_square)
+    {
+        print("no_square");
+        return;
+    }
+    int8_t rank = square / 8;
+    int8_t file = square % 8;
+
+    print(static_cast<char>('h' - file));
+    print(static_cast<char>('8' - rank));
 }
 
 std::string Board::SquareToRankFile(Square square)
@@ -1149,7 +1165,7 @@ bool Board::decode_is_en_passant_move(Move move)
 CastlingRights Board::decode_castling_move(Move move)
 {
 
-    return static_cast<CastlingRights>((move >> 23) & 0x7);
+    return static_cast<CastlingRights>((move >> 23) & 0b1111);
 }
 
 Move Board::encode_move(Square from, Square to, Color side,
@@ -1160,13 +1176,12 @@ Move Board::encode_move(Square from, Square to, Color side,
                         CastlingRights castling)
 {
     Move move = 0;
-    move |= static_cast<Move>(from);
-    move |= static_cast<Move>(to) << 6;
-    move |= static_cast<Move>(side) << 12;
-    move |= static_cast<Move>(moved_piece) << 13;
-
-    move |= static_cast<Move>(captured_piece) << 16;
-    move |= static_cast<Move>(promotion_piece) << 19;
+    move |= (static_cast<Move>(from) & 0b111111);
+    move |= (static_cast<Move>(to) & 0b111111) << 6;
+    move |= (static_cast<Move>(side) & 0b1) << 12;
+    move |= (static_cast<Move>(moved_piece) & 0b111) << 13;
+    move |= (static_cast<Move>(captured_piece) & 0b111) << 16;
+    move |= (static_cast<Move>(promotion_piece) & 0b111) << 19;
     if(is_en_passant)
     {
         move |= C64(1) << 22;
@@ -1174,10 +1189,9 @@ Move Board::encode_move(Square from, Square to, Color side,
     else {
         move &= ~(C64(1) << 22);
     }
-    if(castling != no_castling)
-    {
-        move |= static_cast<Move>(castling) << 23;
-    }
+
+    move |= (static_cast<Move>(castling) & 0b1111) << 23;
+
     return move;
 }
 
@@ -1211,9 +1225,6 @@ void Board::make_move(Move move)
     CastlingRights castling = decode_castling_move(move);
 
     printDecodedMove(move);
-    newLine();
-    print(promoted);
-    newLine();
 
     if(captured != NoPiece)
     {
@@ -1240,19 +1251,15 @@ void Board::make_move(Move move)
     clearBit(bitmaps[side], from);
     clearBit(bitmaps[moved], from);
 
-    if(promoted != NoPiece)
+    if(from == to)
     {
-        setBit(bitmaps[promoted], to);
+        if(promoted != NoPiece)
+            setBit(bitmaps[promoted], to);
+        else
+            setBit(bitmaps[P], to);
         setBit(bitmaps[side], to);
     }
     else {
-        if(moved == K)
-        {
-            print("King moved from ");
-            print(SquareToRankFile(from));
-            print(" to ");
-            print(SquareToRankFile(to));
-        }
         setBit(bitmaps[moved], to);
         setBit(bitmaps[side], to);
     }
