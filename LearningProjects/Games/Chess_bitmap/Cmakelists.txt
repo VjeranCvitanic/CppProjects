@@ -8,8 +8,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Common sources
 set(COMMON_SRC
-    src/Board.cpp
+    src/BoardClass/Board.cpp
     src/utils.cpp
+    src/BoardClass/Helpers.cpp
+    src/BoardClass/MoveEncDec.cpp
+    src/BoardClass/MoveGen.cpp
+    src/BoardClass/Print.cpp
+    src/BoardClass/User.cpp
 )
 
 # =========================

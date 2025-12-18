@@ -4,6 +4,8 @@
 #include <random>
 #include <tuple>
 #include <vector>
+#include <cstring>
+#include <exception>
 
 
 #define a_file 0x8080808080808080
@@ -22,7 +24,8 @@
 #define _PRECOMPUTED_MAGIC_NUMBERS_
 
 static char fen[][300] = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
-    "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0"};
+    "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0",
+        "r3k3/8/7R/8/8/8/8/8 b kq - 0 0\0"};
 
 /*
 uint32_t move
@@ -120,7 +123,6 @@ public:
     std::vector<Move> legalMoves;
     std::vector<Move> encodedPseudoLegalMoves;
 
-
     // move bitmaps
     U64 pawn_attack_mask(Square, Color);
     U64 pawn_advance_moves(Square, Color);
@@ -168,14 +170,24 @@ public:
     CastlingRights get_castling(Square from, Square to);
     bool is_move_legal(Move move);
 
-    int8_t UserMoveInterface(char*);
+    void UserMoveInterface();
     SquareTuple parse_input_squares(char*);
     Piece parse_input_promoted(char*);
+    int8_t parse_user_input(char* input);
+
 
     int8_t UserMove(Square from, Square to, Piece promotion = NoPiece);
 
+    void GameLoop();
+    void UpdateState();
+    void EndGame();
+
+    bool isDraw();
+    bool isGameEnd();
+
+
 //private:
-    U64 bitmaps[9];
+    U64 bitmaps[8];
     U32 random_seed = RANDOM_SEED;
 
     U64 magic_numbers_rook[64];

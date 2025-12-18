@@ -11,22 +11,5 @@ int main()
 
     Board board(fen[0]);
 
-    board.printAdditionalInfo();
-
-    board.initialize();
-
-    board.printBoardSymbols();
-
-    board.generate_legal_moves();
-
-    board.printLegalMoves();
-
-    board.printBoardSymbols();
-
-    board.UserMoveInterface("g1f2");
-// todo - make sure when white plays that white pieces can move only
-    board.printBoardSymbols();
-
-    //board.generate_legal_moves();
-    //board.printLegalMoves();
+    board.GameLoop();
 }

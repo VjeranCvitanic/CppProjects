@@ -1,4 +1,0 @@
-C:/Dev/Cpp/LearningProjects/Games/Chess_bitmap/build/CMakeFiles/chess.dir
-C:/Dev/Cpp/LearningProjects/Games/Chess_bitmap/build/CMakeFiles/test_chess.dir
-C:/Dev/Cpp/LearningProjects/Games/Chess_bitmap/build/CMakeFiles/ALL_BUILD.dir
-C:/Dev/Cpp/LearningProjects/Games/Chess_bitmap/build/CMakeFiles/ZERO_CHECK.dir

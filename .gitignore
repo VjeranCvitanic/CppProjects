@@ -1,8 +1,11 @@
 *.out
 *.ilk
 *.pdb
+*.obj
 *.o
 *.exe
 *bin
 *output
 *.log
+*out/
+*build
