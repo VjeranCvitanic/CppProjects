@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include <cstdint>
 #include <random>
+#include <string>
 #include <tuple>
 #include <vector>
 #include <cstring>
@@ -25,7 +26,8 @@
 
 static char fen[][300] = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
     "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0",
-        "r3k3/8/7R/8/8/8/8/8 b kq - 0 0\0"};
+    "r3k3/8/7R/8/8/8/8/8 b kq - 0 0\0",
+    "8/P7/8/8/8/8/8/5k1K w k - 0 0\0"};
 
 /*
 uint32_t move
@@ -39,8 +41,19 @@ uint32_t move
             11 1                              promoted piece (3 bits)
            1                                  en passant capture flag (1 bit)
       111 1                                   castling flag (4 bits)
+                                              
 xxxx x                                        unused (5 bits)
 */
+
+enum ReturnValue
+{
+    RETURN_SUCCESS = 0,
+    RETURN_INVALID_INPUT,
+    RETURN_INVALID_PROMOTION_PIECE,
+    RETURN_ILLEGAL_MOVE,
+    RETURN_HELP,
+    RETURN_INVALID_FEN
+};
 
 enum Color{
     white = 0,
@@ -65,13 +78,14 @@ enum bitmap_enum
 };
 
 enum Piece{
+    NoPiece = 0,
+    AnyPiece = 1,
     P = pawns,
     N,
     B,
     R,
     Q,
-    K,
-    NoPiece = 0
+    K
 };
 
 constexpr static char unicode_symbols[][7] = {
@@ -167,19 +181,28 @@ public:
                         CastlingRights castling = no_castling);
     Move encode_move(Square from, Square to, Piece promotion = NoPiece);
     bool is_move_en_passant(Square from, Square to);
+    bool is_move_double_pawn_push(Move move);
+    bool is_move_promotion(Move move);
+    Square calculate_en_passant_square(Move move);
+
+    void update_en_passant_square(Move move);    
+    void update_castling_rights(Move move);
+    void update_move_count(Move move);
+
     CastlingRights get_castling(Square from, Square to);
     bool is_move_legal(Move move);
 
-    void UserMoveInterface();
-    SquareTuple parse_input_squares(char*);
-    Piece parse_input_promoted(char*);
-    int8_t parse_user_input(char* input);
+    Move UserMoveInterface();
+    SquareTuple parse_input_squares(std::string);
+    Piece parse_input_promoted(std::string);
+    ReturnValue parse_user_input(std::string input, Move& move);
 
+    Move blackout_promotion_info(Move move);
 
-    int8_t UserMove(Square from, Square to, Piece promotion = NoPiece);
+    ReturnValue UserMoveCheck(Move& move, Square from, Square to, Piece promotion = NoPiece);
 
     void GameLoop();
-    void UpdateState();
+    void UpdateState(Move move);
     void EndGame();
 
     bool isDraw();
@@ -211,6 +234,9 @@ public:
     Color side_to_move;
     int8_t castling_rights; // 4 bits: white KQ, black kq
     Square en_passant_square;
+
+    //Move LastMovePlayed;
+    //all moves in a list w info about board state (does it get info move encode decode)
 
     constexpr static U64 magic_numbers_rook_precomputed[] =
     {

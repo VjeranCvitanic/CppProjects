@@ -1,4 +1,5 @@
 #include "../../inc/Board.h"
+#include <exception>
 
 Board::Board()
 {
@@ -99,6 +100,7 @@ void Board::initialize_num_occ_bits()
 
 void Board::GameLoop()
 {
+    Move move;
     printAdditionalInfo();
     initialize();
     generate_legal_moves();
@@ -108,22 +110,26 @@ void Board::GameLoop()
         printBoardSymbols();
         printAdditionalInfo();
         
-        UserMoveInterface();
+        move = UserMoveInterface();
 
-        UpdateState();
+        make_move(move);
+
+        UpdateState(move);
         generate_legal_moves();
     }
+
+    printBoardSymbols();
 
     EndGame();
 }
 
-void Board::UpdateState()
+void Board::UpdateState(Move move)
 {
     side_to_move = otherColor(side_to_move);
 
-    // enpassant, castling rights, count moves todo
-    // pat todo
-    fullmove_number++;
+    update_en_passant_square(move);    
+    update_castling_rights(move);
+    update_move_count(move);
 }
 
 void Board::EndGame()
@@ -189,18 +195,19 @@ void Board::make_move(Move move)
     clearBit(bitmaps[side], from);
     clearBit(bitmaps[moved], from);
 
-    if(from == to)
+    if(is_move_promotion(move))
     {
-        if(promoted != NoPiece)
+        if(promoted != NoPiece && promoted != P)
             setBit(bitmaps[promoted], to);
         else
-            setBit(bitmaps[P], to); // "simulation" purposes
-        setBit(bitmaps[side], to);
+        {
+            print("Promoted piece is invalid!");
+            throw(std::exception("Promoted piece is invalid!"));
+        }
     }
-    else {
+    else
         setBit(bitmaps[moved], to);
-        setBit(bitmaps[side], to);
-    }
+    setBit(bitmaps[side], to);
 
     if(castling != no_castling)
     {
@@ -240,7 +247,7 @@ bool Board::isGameEnd()
     if(legalMoves.empty())
         return true;
 
-    // todo
+    // todo draw
 
     return false;
 }
@@ -248,4 +255,5 @@ bool Board::isGameEnd()
 bool Board::isDraw()
 {
     // todo https://www.chess.com/terms/draw-chess
+    return false;
 }

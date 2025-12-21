@@ -9,7 +9,7 @@ int main()
         system("chcp 65001 > nul");
     #endif
 
-    Board board(fen[0]);
+    Board board;//(fen[0]);
 
     board.GameLoop();
 }

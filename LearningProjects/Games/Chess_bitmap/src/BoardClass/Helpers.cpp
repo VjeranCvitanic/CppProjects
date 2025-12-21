@@ -100,8 +100,6 @@ void Board::clearBit(U64 &bitmap, Square square)
     bitmap &= ~(C64(1) << square);
 }
 
-
-
 uint8_t Board::countBits(U64 board)
 {
     uint8_t cnt = 0;
@@ -265,6 +263,79 @@ bool Board::is_move_en_passant(Square from, Square to)
     return false;
 }
 
+Square Board::calculate_en_passant_square(Move move)
+{
+    Color side = decode_side_to_move_from_move(move);
+    Square from = decode_square_from_move(move, true);
+
+    if(side == white)
+        return static_cast<Square>(from - 8);
+    return static_cast<Square>(from + 8);
+}
+
+void Board::update_en_passant_square(Move move)
+{
+    if(is_move_double_pawn_push(move))
+        en_passant_square = calculate_en_passant_square(move);
+    else
+        en_passant_square = no_square;
+}
+
+void Board::update_castling_rights(Move move)
+{
+    Piece moved = decode_moved_piece_from_move(move);
+    Color side = decode_side_to_move_from_move(move);
+    if(moved == K)
+    {
+        castling_rights &= (side == white) ? ~(white_kingside | white_queenside) : ~(black_kingside | black_queenside);
+    }
+    else if(moved == R)
+    {
+        Square from = decode_square_from_move(move, true);
+        U64 b = 0;
+        setBit(b, from);
+        if(b & h_file)
+            castling_rights &= (side == white) ? ~white_kingside : ~black_kingside;
+        else if(b & a_file)
+            castling_rights &= (side == white) ? ~white_queenside : ~black_queenside;
+    }
+}
+
+void Board::update_move_count(Move move)
+{
+    if(decode_side_to_move_from_move(move) == white)
+        return; // update only after both players make moves
+    fullmove_number++;
+    if(decode_captured_piece_from_move(move) != NoPiece || decode_moved_piece_from_move(move) == P)
+        halfmove_clock = 0;
+    else
+        halfmove_clock++;
+}
+
+bool Board::is_move_double_pawn_push(Move move)
+{
+    if(decode_moved_piece_from_move(move) != P)
+        return false;
+    Square from = decode_square_from_move(move, true);
+    Square to = decode_square_from_move(move, false);
+    if(abs(to - from) == 16)
+        return true;
+    return false;
+}
+
+bool Board::is_move_promotion(Move move)
+{
+    Piece moved = decode_moved_piece_from_move(move);
+    Square to = decode_square_from_move(move, false);
+
+    if(moved == P && ((to <= a8) || (to >= h1)))
+    {
+        return true;
+    }
+
+    return false;
+}
+
 CastlingRights Board::get_castling(Square from, Square to)
 {
     if(get_piece_on_square(from) != K)
@@ -287,7 +358,15 @@ CastlingRights Board::get_castling(Square from, Square to)
     return no_castling;
 }
 
+Move Board::blackout_promotion_info(Move move)
+{
+    constexpr Move PROMO_MASK = (0b111ULL << 19);
 
+    move &= ~PROMO_MASK;
+    move |= (static_cast<Move>(AnyPiece & 0b111) << 19);
+
+    return move;
+}
 
 // test
 bool Board::verify_magics(SliderPiece piece, Square square)
@@ -345,3 +424,4 @@ bool Board::verify_all_magics()
     }
     return true;
 }
+

@@ -1,24 +1,32 @@
 #include "../../inc/Board.h"
+#include <string>
 
-int8_t Board::parse_user_input(char* input)
+ReturnValue Board::parse_user_input(std::string input, Move& move)
 {
-    if(std::strcmp(input, "help") == 0)
-        return 1;
+    if(input == "help")
+        return RETURN_HELP;
     SquareTuple mt = parse_input_squares(input);
     Square from = std::get<0>(mt);
     Square to = std::get<1>(mt);
     Piece promoted = NoPiece;
 
     if(from == no_square)
-        return -2;
-    if(to == from || to == no_square)
+        return RETURN_INVALID_INPUT;
+
+    Move m = encode_move(from, to);
+    if(is_move_promotion(m))
     {
-        promoted = parse_input_promoted(input);
-        if(promoted == NoPiece)
-            return -2;
+        while(promoted < N)
+        {
+            print("Enter promoted piece(n, b, r, q): ");
+            std::string promo;
+            std::cin >> promo;
+
+            promoted = parse_input_promoted(promo);
+        }
     }
 
-    return UserMove(from, to, promoted);
+    return UserMoveCheck(move, from, to, promoted);
 }
 
 int8_t Board::parseFen(char* fenPosition)
@@ -26,7 +34,7 @@ int8_t Board::parseFen(char* fenPosition)
     char* ptr = fenPosition;
     if(!ptr || strlen(fenPosition) > (64 + 7 + 14 + 1) || strlen(fenPosition) < 15)   // 64 squares + 7 slashes + null terminator + 14 chars for
                                                                                                // side to move, castling, en passant, halfmove clock, fullmove number
-        return -1;
+        return RETURN_INVALID_FEN;
     for(int i = 0; i <= 63;)
     {
         int8_t ascii_from_0 = *ptr - '0';
@@ -37,11 +45,16 @@ int8_t Board::parseFen(char* fenPosition)
         else   // if alphabetical
         {
             if(set_char_to_bitmap(*ptr, i) != 0)
-                return -1;  // invalid FEN
+                return RETURN_INVALID_FEN;  // invalid FEN
             i++;
         }
 
         ptr++;
+    }
+
+    if(countBits(bitmaps[kings]) != 2)
+    {
+        return RETURN_INVALID_FEN;
     }
 
     parseFenAdditionalInfo(ptr);
@@ -105,45 +118,46 @@ void Board::parseFenAdditionalInfo(char* ptr)
 }
 
 // e2e4 / a7b8 Q (promotion)
-void Board::UserMoveInterface()
+Move Board::UserMoveInterface()
 {
     int8_t validInput = 1;
-    char input[7] = {};
+    std::string input;
+    Move move;
     print("Enter your next move ("), print(side_to_move == white ? "w" : "b"), print(" to move)\n");
 
     while(validInput != 0)
     {
         std::cin >> input;
 
-        validInput = parse_user_input(input); // todo - user inputs just a square, return all moves legal from that square
-        if(validInput == 1)
+        validInput = parse_user_input(input, move); // todo - user inputs just a square, return all moves legal from that square
+        if(validInput == RETURN_HELP)
             printLegalMoves(), print("Enter your move: ");
-        else if(validInput == -2)
+        else if(validInput == RETURN_INVALID_INPUT)
             print("Invalid input, try again:\n");
-        else if(validInput == -1)
+        else if(validInput == RETURN_ILLEGAL_MOVE)
             print("Move is not legal, input 'help' for list of legal moves or try again:\n");
+        else if(validInput == RETURN_INVALID_PROMOTION_PIECE)
+            print("Invalid promotion piece input, try again:\n");
     }
+
+    return move;
 }
 
-int8_t Board::UserMove(Square from, Square to, Piece promoted)
+ReturnValue Board::UserMoveCheck(Move& move, Square from, Square to, Piece promoted)
 {
     if((from == to) && (promoted == NoPiece)) // user has to provide promoted piece type if promotion is played
-        return -2;
-    Move move = encode_move(from, to, promoted);
+        return RETURN_INVALID_INPUT;
+    move = encode_move(from, to, promoted);
     if(is_move_legal(move) == false)
-        return -1;
-    make_move(move);
+        return RETURN_ILLEGAL_MOVE;
 
-    return 0;
+    return RETURN_SUCCESS;
 }
 
-SquareTuple Board::parse_input_squares(char* input)
+SquareTuple Board::parse_input_squares(std::string input)
 {
-    if(!input) 
-        return { no_square, no_square };
-
     // expect at least "e2e4"
-    if(std::strlen(input) < 4)
+    if(input.size() < 4)
         return { no_square, no_square };
 
     Square from = RankFileToSquare(input[0], input[1]);
@@ -155,15 +169,9 @@ SquareTuple Board::parse_input_squares(char* input)
     return std::make_tuple(from, to);
 }
 
-Piece Board::parse_input_promoted(char* input)
+Piece Board::parse_input_promoted(std::string input)
 {
-    if(!input) 
-        return NoPiece;
-
-    if(std::strlen(input) < 6)
-        return NoPiece;
-
-    switch(input[5])
+    switch(tolower(input[0]))
     {
         case 'q': return Q;
         case 'r': return R;

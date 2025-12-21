@@ -329,7 +329,6 @@ void Board::generate_legal_moves()
                     restore_board_state(std::move(saved_state));
                     continue;
                 }
-
             }
             legalMoves.push_back(*it);
         }
@@ -458,14 +457,20 @@ Move Board::encode_pseudo_legal_move(Square from_square, Square to_square)
                                         side_to_move,
                                         moved_piece,
                                         captured_piece,
-                                        NoPiece,
+                                        AnyPiece, // just need something when running simulation for whether move is legal
                                         ((to_square == en_passant_square) && (moved_piece == P)),
                                         castle);
 }
 
 bool Board::is_move_legal(Move move)
 {
-    if(std::find(legalMoves.begin(), legalMoves.end(), move) != legalMoves.end())
-        return true;
+    Move bm = blackout_promotion_info(move);
+
+    for(Move& m : legalMoves)
+    {
+        if(bm == m)
+            return true;
+    }
+
     return false;
 }
