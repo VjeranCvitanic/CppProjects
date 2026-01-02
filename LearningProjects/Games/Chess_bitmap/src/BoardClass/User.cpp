@@ -1,10 +1,15 @@
 #include "../../inc/Board.h"
+#include <cstdint>
 #include <string>
 
 ReturnValue Board::parse_user_input(std::string input, Move& move)
 {
     if(input == "help")
         return RETURN_HELP;
+    if(input == "revert")
+        return RETURN_REVERT;
+    if(input == "print")
+        return RETURN_PRINT;
     SquareTuple mt = parse_input_squares(input);
     Square from = std::get<0>(mt);
     Square to = std::get<1>(mt);
@@ -29,9 +34,9 @@ ReturnValue Board::parse_user_input(std::string input, Move& move)
     return UserMoveCheck(move, from, to, promoted);
 }
 
-int8_t Board::parseFen(char* fenPosition)
+int8_t Board::parseFen(const char* fenPosition)
 {
-    char* ptr = fenPosition;
+    const char* ptr = fenPosition;
     if(!ptr || strlen(fenPosition) > (64 + 7 + 14 + 1) || strlen(fenPosition) < 15)   // 64 squares + 7 slashes + null terminator + 14 chars for
                                                                                                // side to move, castling, en passant, halfmove clock, fullmove number
         return RETURN_INVALID_FEN;
@@ -62,7 +67,7 @@ int8_t Board::parseFen(char* fenPosition)
     return 0;
 }
 
-void Board::parseFenAdditionalInfo(char* ptr)
+void Board::parseFenAdditionalInfo(const char* ptr)
 {
     int8_t cnt = 0;
     ptr++; // skip space after board layout
@@ -118,12 +123,11 @@ void Board::parseFenAdditionalInfo(char* ptr)
 }
 
 // e2e4 / a7b8 Q (promotion)
-Move Board::UserMoveInterface()
+int8_t Board::UserMoveInterface(Move& move)
 {
     int8_t validInput = 1;
     std::string input;
-    Move move;
-    print("Enter your next move ("), print(side_to_move == white ? "w" : "b"), print(" to move)\n");
+    print("Enter your next move ("), print(side_to_move == white ? "w" : "b"), print(" to move) / help / revert / print \n");
 
     while(validInput != 0)
     {
@@ -132,6 +136,19 @@ Move Board::UserMoveInterface()
         validInput = parse_user_input(input, move); // todo - user inputs just a square, return all moves legal from that square
         if(validInput == RETURN_HELP)
             printLegalMoves(), print("Enter your move: ");
+        else if(validInput == RETURN_PRINT)
+        {
+           printAllBoards();
+        }
+        else if(validInput == RETURN_REVERT)
+        {
+            move = RevertMove();
+            if(move != 0)
+            {
+                print("Move reverted!\n");
+                return RETURN_REVERT;
+            }
+        }
         else if(validInput == RETURN_INVALID_INPUT)
             print("Invalid input, try again:\n");
         else if(validInput == RETURN_ILLEGAL_MOVE)
@@ -140,13 +157,11 @@ Move Board::UserMoveInterface()
             print("Invalid promotion piece input, try again:\n");
     }
 
-    return move;
+    return RETURN_SUCCESS;
 }
 
 ReturnValue Board::UserMoveCheck(Move& move, Square from, Square to, Piece promoted)
 {
-    if((from == to) && (promoted == NoPiece)) // user has to provide promoted piece type if promotion is played
-        return RETURN_INVALID_INPUT;
     move = encode_move(from, to, promoted);
     if(is_move_legal(move) == false)
         return RETURN_ILLEGAL_MOVE;

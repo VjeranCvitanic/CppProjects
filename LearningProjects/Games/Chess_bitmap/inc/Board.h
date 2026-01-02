@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include <cstdint>
 #include <random>
+#include <stack>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -24,10 +25,11 @@
 
 #define _PRECOMPUTED_MAGIC_NUMBERS_
 
-static char fen[][300] = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
+static std::vector<std::string> fen = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
     "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0",
-    "r3k3/8/7R/8/8/8/8/8 b kq - 0 0\0",
-    "8/P7/8/8/8/8/8/5k1K w k - 0 0\0"};
+    "r3k3/8/7R/8/8/8/8/8 b kq - 0 0\0"//,
+    //"8/P7/8/8/8/8/8/5k1K w k - 0 0\0"
+};
 
 /*
 uint32_t move
@@ -41,8 +43,8 @@ uint32_t move
             11 1                              promoted piece (3 bits)
            1                                  en passant capture flag (1 bit)
       111 1                                   castling flag (4 bits)
-                                              
-xxxx x                                        unused (5 bits)
+     1                                        double pawn push (1 bit)           // for restoring board state ˇ
+1111                                          previous castling rights (4 bits)
 */
 
 enum ReturnValue
@@ -52,7 +54,9 @@ enum ReturnValue
     RETURN_INVALID_PROMOTION_PIECE,
     RETURN_ILLEGAL_MOVE,
     RETURN_HELP,
-    RETURN_INVALID_FEN
+    RETURN_INVALID_FEN,
+    RETURN_REVERT,
+    RETURN_PRINT
 };
 
 enum Color{
@@ -127,10 +131,16 @@ class Board
 {
 public:
     Board();
-    Board(char* fenPosition);
+    Board(const char* fenPosition);
+    Board(std::string fenPosition);
 
-    int8_t parseFen(char* fenPosition);
-    void parseFenAdditionalInfo(char* fenPositionAdditionalInfo);
+    bool operator==(Board&);
+
+
+    std::vector<Move> ListOfMoves;
+
+    int8_t parseFen(const char* fenPosition);
+    void parseFenAdditionalInfo(const char* fenPositionAdditionalInfo);
     int8_t set_char_to_bitmap(char c, int8_t index);
 
     std::vector<std::tuple<Square, Square>> pseudoLegalMoves;
@@ -161,6 +171,7 @@ public:
     bool is_square_attacked(Square square, Color byColor);
 
     void make_move(Move move);
+    void unmake_move(Move move);
 
     BoardState save_board_state();
     void restore_board_state(BoardState&& state);
@@ -172,27 +183,33 @@ public:
     static Piece decode_promoted_piece_from_move(Move move);
     static bool decode_is_en_passant_move(Move move);
     static CastlingRights decode_castling_move(Move move);
+    static int8_t decode_prev_castling_rights(Move move);
+    static bool decode_is_double_pawn_push(Move move);
+
 
     static Move encode_move(Square from, Square to, Color side,
                         Piece moved_piece,
                         Piece captured_piece = NoPiece,
                         Piece promotion_piece = NoPiece,
                         bool is_en_passant = false,
-                        CastlingRights castling = no_castling);
+                        CastlingRights castling = no_castling,
+                        bool is_double_pawn_push = false,
+                        int8_t prevCR = no_castling);
     Move encode_move(Square from, Square to, Piece promotion = NoPiece);
     bool is_move_en_passant(Square from, Square to);
     bool is_move_double_pawn_push(Move move);
+    bool is_move_double_pawn_push(Square from, Square to);
     bool is_move_promotion(Move move);
     Square calculate_en_passant_square(Move move);
 
     void update_en_passant_square(Move move);    
     void update_castling_rights(Move move);
-    void update_move_count(Move move);
+    void update_move_count(Move move, bool add);
 
     CastlingRights get_castling(Square from, Square to);
     bool is_move_legal(Move move);
 
-    Move UserMoveInterface();
+    int8_t UserMoveInterface(Move& move);
     SquareTuple parse_input_squares(std::string);
     Piece parse_input_promoted(std::string);
     ReturnValue parse_user_input(std::string input, Move& move);
@@ -200,6 +217,11 @@ public:
     Move blackout_promotion_info(Move move);
 
     ReturnValue UserMoveCheck(Move& move, Square from, Square to, Piece promotion = NoPiece);
+
+    void CommitMove(Move move);
+    Move RevertMove();
+
+    void PlayOutGame();
 
     void GameLoop();
     void UpdateState(Move move);

@@ -301,23 +301,44 @@ void Board::update_castling_rights(Move move)
     }
 }
 
-void Board::update_move_count(Move move)
+void Board::update_move_count(Move move, bool add)
 {
-    if(decode_side_to_move_from_move(move) == white)
-        return; // update only after both players make moves
-    fullmove_number++;
+    if(decode_side_to_move_from_move(move) == black)
+    { // update only after both players make moves
+        if(add)
+            fullmove_number++;
+        else
+            fullmove_number--;
+    }
     if(decode_captured_piece_from_move(move) != NoPiece || decode_moved_piece_from_move(move) == P)
-        halfmove_clock = 0;
+    {
+        if(add)
+            halfmove_clock = 0;
+        //else
+         //   halfmove_clock;
+    }
     else
-        halfmove_clock++;
+    {
+        if (add) {
+            halfmove_clock++;
+        }
+        else {
+            halfmove_clock--;
+        }
+    }
 }
 
 bool Board::is_move_double_pawn_push(Move move)
 {
-    if(decode_moved_piece_from_move(move) != P)
-        return false;
     Square from = decode_square_from_move(move, true);
     Square to = decode_square_from_move(move, false);
+    return is_move_double_pawn_push(from, to);
+}
+
+bool Board::is_move_double_pawn_push(Square from, Square to)
+{
+    if(get_piece_on_square(from) != P)
+        return false;
     if(abs(to - from) == 16)
         return true;
     return false;

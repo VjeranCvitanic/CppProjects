@@ -1,4 +1,5 @@
 #include "../../inc/Board.h"
+#include <cstdint>
 
 Square Board::decode_square_from_move(Move move, bool is_from)
 {
@@ -26,8 +27,16 @@ bool Board::decode_is_en_passant_move(Move move)
 }
 CastlingRights Board::decode_castling_move(Move move)
 {
-
     return static_cast<CastlingRights>((move >> 23) & 0b1111);
+}
+bool Board::decode_is_double_pawn_push(Move move)
+{
+    return (move >> 27) & 0x1;
+}
+int8_t Board::decode_prev_castling_rights(Move move)
+{
+
+    return static_cast<CastlingRights>((move >> 28) & 0b1111);
 }
 
 Move Board::encode_move(Square from, Square to, Color side,
@@ -35,7 +44,9 @@ Move Board::encode_move(Square from, Square to, Color side,
                         Piece captured_piece,
                         Piece promotion_piece,
                         bool is_en_passant,
-                        CastlingRights castling)
+                        CastlingRights castling,
+                        bool is_double_pawn_push,
+                        int8_t prevCR)
 {
     Move move = 0;
     move |= (static_cast<Move>(from) & 0b111111);
@@ -54,11 +65,18 @@ Move Board::encode_move(Square from, Square to, Color side,
 
     move |= (static_cast<Move>(castling) & 0b1111) << 23;
 
+    if(is_double_pawn_push)
+        move |= C64(1) << 27;
+    else
+        move &= ~(C64(1) << 27);
+
+    move |= (static_cast<Move>(prevCR) & 0b1111) << 28;
+
     return move;
 }
 
 Move Board::encode_move(Square from, Square to, Piece promoted)
 {
     return encode_move(from, to, side_to_move, get_piece_on_square(from), get_piece_on_square(to),
-                        promoted, is_move_en_passant(from, to), get_castling(from, to));
+                        promoted, is_move_en_passant(from, to), get_castling(from, to), is_move_double_pawn_push(from, to), castling_rights);
 }

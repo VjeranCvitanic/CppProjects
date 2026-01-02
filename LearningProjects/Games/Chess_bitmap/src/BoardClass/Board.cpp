@@ -1,4 +1,5 @@
 #include "../../inc/Board.h"
+#include <cstdint>
 #include <exception>
 
 Board::Board()
@@ -19,12 +20,40 @@ Board::Board()
     en_passant_square = no_square;
 }
 
-Board::Board(char* fenPosition)
+Board::Board(const char* fenPosition)
 {
     if(parseFen(fenPosition) != 0)
     {
         print("Invalid FEN string!\n");
     }
+}
+
+Board::Board(std::string fenPosition)
+{
+    if(parseFen(fenPosition.c_str()) != 0)
+    {
+        print("Invalid FEN string!\n");
+    }
+}
+
+bool Board::operator==(Board& other)
+{
+    bool f = true;
+    for(int8_t i = 0; i < 9; i++)
+    {
+        if(bitmaps[i] != other.bitmaps[i])
+        {
+            f = false;
+            print(i), print(" ");
+            printBoardBits(bitmaps[i]);
+            printBoardBits(other.bitmaps[i]);
+            getchar();
+        }
+    }
+
+    newLine();
+
+    return f;
 }
 
 void Board::init_leapers_attacks()
@@ -109,12 +138,24 @@ void Board::GameLoop()
     {   
         printBoardSymbols();
         printAdditionalInfo();
+        int8_t ret_val;
+        do
+        {
+            ret_val = UserMoveInterface(move);
+        }
+        while(ret_val != RETURN_SUCCESS && ret_val != RETURN_REVERT);
+
+        if(ret_val == RETURN_SUCCESS)
+        {
+            CommitMove(move);
+            UpdateState(move);
+        }
+        else if(ret_val == RETURN_REVERT)
+        {
+            side_to_move = otherColor(side_to_move);
+            update_move_count(move, false);
+        }
         
-        move = UserMoveInterface();
-
-        make_move(move);
-
-        UpdateState(move);
         generate_legal_moves();
     }
 
@@ -129,7 +170,7 @@ void Board::UpdateState(Move move)
 
     update_en_passant_square(move);    
     update_castling_rights(move);
-    update_move_count(move);
+    update_move_count(move, true);
 }
 
 void Board::EndGame()
@@ -242,6 +283,86 @@ void Board::make_move(Move move)
     }
 }
 
+void Board::unmake_move(Move move)
+{
+    Piece captured = decode_captured_piece_from_move(move);
+    Piece moved = decode_moved_piece_from_move(move);
+    Square from = decode_square_from_move(move, true);
+    Square to = decode_square_from_move(move, false);
+    Color side = decode_side_to_move_from_move(move);
+    Piece promoted = decode_promoted_piece_from_move(move);
+    bool is_en_passant = decode_is_en_passant_move(move);
+    CastlingRights castling = decode_castling_move(move);
+    bool is_double_pawn_push = decode_is_double_pawn_push(move);
+    int8_t prev_CR = decode_prev_castling_rights(move);
+
+    setBit(bitmaps[moved], from);
+    setBit(bitmaps[side], from);
+
+    if(promoted != NoPiece)
+        clearBit(bitmaps[promoted], to);
+    else
+        clearBit(bitmaps[moved], to);
+    clearBit(bitmaps[side], to);
+    if(captured != NoPiece)
+    {
+        if(is_en_passant)
+        {
+            if(side == white)
+            {
+                setBit(bitmaps[captured], static_cast<Square>(to + 8));
+                setBit(bitmaps[otherColor(side)], static_cast<Square>(to + 8));
+            }
+            else {
+                setBit(bitmaps[captured], static_cast<Square>(to - 8));
+                setBit(bitmaps[otherColor(side)], static_cast<Square>(to - 8));            
+            }
+        }
+        else {
+            setBit(bitmaps[captured], to);
+            setBit(bitmaps[otherColor(side)], to);
+        }
+    }
+
+    castling_rights = prev_CR;
+    if(is_double_pawn_push)
+    {
+        en_passant_square = (side == white) ? static_cast<Square>(to + 8) : static_cast<Square>(to - 8);
+    }
+
+    if(castling != no_castling)
+    {
+        if(castling & white_kingside)
+        {
+            clearBit(bitmaps[rooks], f1);
+            clearBit(bitmaps[white_pieces], f1);
+            setBit(bitmaps[rooks], h1);
+            setBit(bitmaps[white_pieces], h1);
+        }
+        else if(castling & white_queenside)
+        {
+            clearBit(bitmaps[rooks], d1);
+            clearBit(bitmaps[white_pieces], d1);
+            setBit(bitmaps[rooks], a1);
+            setBit(bitmaps[white_pieces], a1);
+        }
+        else if(castling & black_kingside)
+        {
+            clearBit(bitmaps[rooks], f8);
+            clearBit(bitmaps[black_pieces], f8);
+            setBit(bitmaps[rooks], h8);
+            setBit(bitmaps[black_pieces], h8);
+        }
+        else if(castling & black_queenside)
+        {
+            clearBit(bitmaps[rooks], d8);
+            clearBit(bitmaps[black_pieces], d8);
+            setBit(bitmaps[rooks], a8);
+            setBit(bitmaps[black_pieces], a8);
+        }
+    }
+}
+
 bool Board::isGameEnd()
 {
     if(legalMoves.empty())
@@ -256,4 +377,36 @@ bool Board::isDraw()
 {
     // todo https://www.chess.com/terms/draw-chess
     return false;
+}
+
+void Board::CommitMove(Move move)
+{
+    make_move(move);
+    ListOfMoves.push_back(move);
+}
+
+Move Board::RevertMove()
+{
+    if(ListOfMoves.empty())
+    {
+        print("No previous moves to revert!");
+        return 0;
+    }
+
+    Move m = ListOfMoves.back();
+
+    ListOfMoves.pop_back();
+    unmake_move(m);
+    return m;
+}
+
+void Board::PlayOutGame()
+{
+    Board sim;
+    sim.printBoardSymbols();
+    for(auto& m : ListOfMoves)
+    {
+        sim.make_move(m);
+        sim.printBoardSymbols();
+    }
 }

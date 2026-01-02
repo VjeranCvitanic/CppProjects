@@ -459,7 +459,9 @@ Move Board::encode_pseudo_legal_move(Square from_square, Square to_square)
                                         captured_piece,
                                         AnyPiece, // just need something when running simulation for whether move is legal
                                         ((to_square == en_passant_square) && (moved_piece == P)),
-                                        castle);
+                                        castle,
+                                        is_move_double_pawn_push(from_square, to_square),
+                                        castling_rights);
 }
 
 bool Board::is_move_legal(Move move)
