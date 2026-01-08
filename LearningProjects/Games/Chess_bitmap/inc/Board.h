@@ -9,6 +9,7 @@
 #include <cstring>
 #include <exception>
 
+class Bot;
 
 #define a_file 0x8080808080808080
 #define h_file 0x0101010101010101
@@ -61,7 +62,8 @@ enum ReturnValue
 
 enum Color{
     white = 0,
-    black = 1
+    black = 1,
+    no_color
 };
 
 enum SliderPiece{
@@ -90,6 +92,17 @@ enum Piece{
     R,
     Q,
     K
+};
+
+#define PAWN_VALUE 1
+#define KNIGHT_VALUE 3
+#define BISHOP_VALUE 3
+#define ROOK_VALUE 5
+#define QUEEN_VALUE 9
+#define KING_VALUE INT_MAX
+
+constexpr static int piece_values[8] = {
+    0, 0, PAWN_VALUE, KNIGHT_VALUE, BISHOP_VALUE, ROOK_VALUE, QUEEN_VALUE, KING_VALUE
 };
 
 constexpr static char unicode_symbols[][7] = {
@@ -186,6 +199,8 @@ public:
     static int8_t decode_prev_castling_rights(Move move);
     static bool decode_is_double_pawn_push(Move move);
 
+    static void encode_promotion_piece(Move& move, Piece promo);
+
 
     static Move encode_move(Square from, Square to, Color side,
                         Piece moved_piece,
@@ -199,7 +214,7 @@ public:
     bool is_move_en_passant(Square from, Square to);
     bool is_move_double_pawn_push(Move move);
     bool is_move_double_pawn_push(Square from, Square to);
-    bool is_move_promotion(Move move);
+    static bool is_move_promotion(Move move);
     Square calculate_en_passant_square(Move move);
 
     void update_en_passant_square(Move move);    
@@ -214,12 +229,17 @@ public:
     Piece parse_input_promoted(std::string);
     ReturnValue parse_user_input(std::string input, Move& move);
 
-    Move blackout_promotion_info(Move move);
+    static Move blackout_promotion_info(Move move);
 
     ReturnValue UserMoveCheck(Move& move, Square from, Square to, Piece promotion = NoPiece);
 
+    void addPromotionsToLegalMoves();
+
     void CommitMove(Move move);
     Move RevertMove();
+
+    void CommitAndUpdate(Move move);
+    void RevertAndUpdate();
 
     void PlayOutGame();
 
@@ -230,6 +250,7 @@ public:
     bool isDraw();
     bool isGameEnd();
 
+    int count_pieces_value(Color c);
 
 //private:
     U64 bitmaps[8];
@@ -256,6 +277,9 @@ public:
     Color side_to_move;
     int8_t castling_rights; // 4 bits: white KQ, black kq
     Square en_passant_square;
+
+    // Bot is forward-declared above; store pointers here so the full definition is not required in this header.
+    Bot* bots[2] = { nullptr, nullptr };
 
     //Move LastMovePlayed;
     //all moves in a list w info about board state (does it get info move encode decode)
@@ -433,14 +457,14 @@ public:
     void printAllBoards() const;
     void printAdditionalInfo();
     void printLegalMoves();
-    void printDecodedMove(Move move);
+    static void printDecodedMove(Move move);
     void printMove(Move move);
     void printSquare(Square square);
 
-    char pieceToChar(Piece piece, Color color);
+    static char pieceToChar(Piece piece, Color color);
 
 
-    std::string SquareToRankFile(Square square);
+    static std::string SquareToRankFile(Square square);
     Square RankFileToSquare(char file, char rank);
 
     U64 get_occupancy(uint16_t key, U64 attack_mask);
@@ -448,11 +472,13 @@ public:
     U64 random_64();
     U64 sparse_random_64();
 
-    Color otherColor(Color color);
+    static Color otherColor(Color color);
 
     U64 all_pieces_bitmap();
 
     bool verify_magics(SliderPiece piece, Square square);
 
     bool verify_all_magics();
+
+    void setBots(Bot* bot1, Bot* bot2);
 };

@@ -15,6 +15,7 @@ set(COMMON_SRC
     src/BoardClass/MoveGen.cpp
     src/BoardClass/Print.cpp
     src/BoardClass/User.cpp
+    src/Bot.cpp
 )
 
 # =========================

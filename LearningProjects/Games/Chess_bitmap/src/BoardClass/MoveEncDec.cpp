@@ -39,6 +39,15 @@ int8_t Board::decode_prev_castling_rights(Move move)
     return static_cast<CastlingRights>((move >> 28) & 0b1111);
 }
 
+void Board::encode_promotion_piece(Move& move, Piece promo)
+{
+    constexpr Move PROMO_MASK = (0b111ULL << 19);
+
+    move &= ~PROMO_MASK;
+    move |= (static_cast<Move>(promo) & 0b111) << 19;
+}
+
+
 Move Board::encode_move(Square from, Square to, Color side,
                         Piece moved_piece,
                         Piece captured_piece,
@@ -54,7 +63,7 @@ Move Board::encode_move(Square from, Square to, Color side,
     move |= (static_cast<Move>(side) & 0b1) << 12;
     move |= (static_cast<Move>(moved_piece) & 0b111) << 13;
     move |= (static_cast<Move>(captured_piece) & 0b111) << 16;
-    move |= (static_cast<Move>(promotion_piece) & 0b111) << 19;
+    encode_promotion_piece(move, promotion_piece);
     if(is_en_passant)
     {
         move |= C64(1) << 22;

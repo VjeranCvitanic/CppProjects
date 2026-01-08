@@ -131,9 +131,8 @@ void Board::printDecodedMove(Move move)
         print(", Captured piece: ");
         print(pieceToChar(captured_piece, otherColor(side)));
     }
-    if(promotion_piece != NoPiece)
+    if(promotion_piece != NoPiece && promotion_piece != AnyPiece)
     {
-        promotion_piece = promotion_piece == NoPiece ? P : promotion_piece;
         print(", Promotion to: ");
         print(pieceToChar(promotion_piece, side));
     }

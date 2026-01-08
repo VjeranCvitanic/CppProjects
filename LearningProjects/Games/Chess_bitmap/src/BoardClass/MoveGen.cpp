@@ -451,7 +451,7 @@ Move Board::encode_pseudo_legal_move(Square from_square, Square to_square)
     }
 
     Piece moved_piece = get_piece_on_square(from_square);
-    Piece captured_piece = from_square == to_square ? NoPiece : get_piece_on_square(to_square);
+    Piece captured_piece = get_piece_on_square(to_square);
 
     return encode_move(from_square, to_square,
                                         side_to_move,

@@ -1,6 +1,9 @@
 #include "../../inc/Board.h"
+#include "../../inc/Bot.h"
 #include <cstdint>
+#include <cstdio>
 #include <exception>
+#include <vector>
 
 Board::Board()
 {
@@ -138,30 +141,78 @@ void Board::GameLoop()
     {   
         printBoardSymbols();
         printAdditionalInfo();
-        int8_t ret_val;
-        do
+        int8_t ret_val = RETURN_SUCCESS;
+        if(bots[side_to_move])
         {
-            ret_val = UserMoveInterface(move);
+            move = bots[side_to_move]->makeAMove(*this);
         }
-        while(ret_val != RETURN_SUCCESS && ret_val != RETURN_REVERT);
+        else
+        {
+            do
+            {
+                ret_val = UserMoveInterface(move);
+            }
+            while(ret_val != RETURN_SUCCESS && ret_val != RETURN_REVERT);
+        }
 
         if(ret_val == RETURN_SUCCESS)
         {
-            CommitMove(move);
-            UpdateState(move);
+            CommitAndUpdate(move);
         }
         else if(ret_val == RETURN_REVERT)
         {
-            side_to_move = otherColor(side_to_move);
-            update_move_count(move, false);
+            RevertAndUpdate();
         }
         
         generate_legal_moves();
+        getchar();
     }
 
     printBoardSymbols();
 
     EndGame();
+}
+
+void Board::addPromotionsToLegalMoves()
+{
+    std::vector<Move> updated;
+    for(Move m : legalMoves)
+    {
+        if(Board::is_move_promotion(m))
+        {
+            for(int8_t i = N; i <= Q; i++)
+            {
+                Board::encode_promotion_piece(m, static_cast<Piece>(i));
+                updated.push_back(m);
+            }
+        }
+        else {
+            updated.push_back(m);
+        }
+    }
+
+    legalMoves = updated;
+}
+
+int Board::count_pieces_value(Color c)
+{
+    int sum = 0;
+    U64 all = bitmaps[c];
+    while(all)
+    {
+        int lsb = lsb_position(all);
+        Square square = static_cast<Square>(lsb);
+        clearBit(all, square);
+
+        for(int8_t i = P; i <= Q; i++)
+            if(getBit(bitmaps[i], square))
+            {
+                sum += piece_values[i];
+                i = K; // break;
+            }
+    }
+
+    return sum;
 }
 
 void Board::UpdateState(Move move)
@@ -299,7 +350,7 @@ void Board::unmake_move(Move move)
     setBit(bitmaps[moved], from);
     setBit(bitmaps[side], from);
 
-    if(promoted != NoPiece)
+    if(promoted != NoPiece && promoted != AnyPiece)
         clearBit(bitmaps[promoted], to);
     else
         clearBit(bitmaps[moved], to);
@@ -363,6 +414,26 @@ void Board::unmake_move(Move move)
     }
 }
 
+void Board::setBots(Bot* bot1, Bot* bot2)
+{
+    if(bot1)
+    {
+        if(bot2)
+        {
+            if(!(bot1->color != bot2->color && bot1->color != no_color && bot2->color != no_color))
+            {
+                print("Invalid bot color combination!");
+                return;
+            }
+        }
+        
+        bots[bot1->color] = bot1;
+    }
+    if(bot2) {
+        bots[bot2->color] = bot2;
+    }
+}
+
 bool Board::isGameEnd()
 {
     if(legalMoves.empty())
@@ -384,6 +455,25 @@ void Board::CommitMove(Move move)
     make_move(move);
     ListOfMoves.push_back(move);
 }
+
+void Board::CommitAndUpdate(Move move)
+{
+    CommitMove(move);
+    UpdateState(move);
+}
+
+void Board::RevertAndUpdate()
+{
+    Move m = RevertMove();
+    if(m)
+    {
+        side_to_move = otherColor(side_to_move);
+        update_move_count(m, false);
+    }
+    //generate_legal_moves();
+    //addPromotionsToLegalMoves(); //optimise
+}
+
 
 Move Board::RevertMove()
 {

@@ -142,12 +142,11 @@ int8_t Board::UserMoveInterface(Move& move)
         }
         else if(validInput == RETURN_REVERT)
         {
-            move = RevertMove();
-            if(move != 0)
-            {
-                print("Move reverted!\n");
-                return RETURN_REVERT;
-            }
+            if(bots[side_to_move]) // cant revert when playing with bot - TODO
+                continue;
+
+            return RETURN_REVERT;
+            
         }
         else if(validInput == RETURN_INVALID_INPUT)
             print("Invalid input, try again:\n");
