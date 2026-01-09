@@ -95,14 +95,19 @@ void Logger::setOutput(std::ostream*& output, std::unique_ptr<std::ofstream>& of
 
 void Logger::setLogOutput(const char* file_dir)
 {
+    if(!file_dir)
+        return;
     int nextLog = 1; //getNextLogFile(file_dir)
     std::string full_filepath = std::string(file_dir) + std::string("log") + std::to_string(nextLog) + ".log";
     setOutput(logOut, logFileStream, full_filepath);
     print("\n\nLOGGING STARTED\n");
+    print("Output: ", full_filepath, "\n");
 }
 
 void Logger::setDrawOutput(const char* file_dir)
 {
+    if(!file_dir)
+        return;
     int nextLog = 1; //getNextLogFile(file_dir)
     std::string full_filepath = std::string(file_dir) + std::string("drw") + std::to_string(nextLog) + ".txt";
     setOutput(drawOut, drawFileStream, full_filepath);

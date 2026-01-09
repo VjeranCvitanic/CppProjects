@@ -11,7 +11,7 @@ int main()
         system("chcp 65001 > nul");
     #endif
 
-    Board board;//(fen[0]);
+    Board board(fen[0]);
 
     Bot whiteBot(white);
     Bot blackBot(black);
@@ -25,4 +25,6 @@ int main()
 
     // opening book todo
     // optimize botleneck todo
+    // alpha beta todo
+    // eval function todo
 }

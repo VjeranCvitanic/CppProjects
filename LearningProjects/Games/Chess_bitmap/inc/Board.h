@@ -26,7 +26,7 @@ class Bot;
 
 #define _PRECOMPUTED_MAGIC_NUMBERS_
 
-static std::vector<std::string> fen = {"r3kP1r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
+static std::vector<std::string> fen = {"r3k2r/p2pBppN/n4n2/1pPNP2P/6P1/3P4/P1P1K3/q5b1 b kq b6 0 0\0",
     "r7/8/7R/8/8/8/8/8 b kq b6 0 0\0",
     "r3k3/8/7R/8/8/8/8/8 b kq - 0 0\0"//,
     //"8/P7/8/8/8/8/8/5k1K w k - 0 0\0"
