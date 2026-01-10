@@ -50,13 +50,43 @@ Card Cards::makeCard(Color color, Number number)
     return std::make_tuple(color, number);
 }
 
-
-void Cards::printDeck()
+void Cards::logCard(Card card)
 {
-    LOG_INFO("Deck:");
-    for(int i = 0; i < DECK_SIZE; i++)
+    LOG_DEBUG(CardToString(card));
+}
+void Cards::logCards(std::vector<Card> cards)
+{
+    for(auto& card : cards)
     {
-        LOG_INFO(CardToString(deck[i]));
+        logCard(card);
+    }
+}
+
+void Cards::printToConsole(std::vector<Card> cards)
+{
+    for(auto& card : cards)
+    {
+        print(Cards::CardToString(card));
+        print(", ");
+    }
+    newLine();
+}
+
+Number Cards::intToNumber(int8_t number)
+{
+    if(number >= Asso && number <= Sette)
+        return static_cast<Number>(number);
+    if(number >= 11 && number <= 13)
+        return static_cast<Number>(number - 3);
+    return InvalidNumber;
+}
+
+void Cards::logDeck()
+{
+    LOG_DEBUG("Deck:");
+    for(int i = DECK_SIZE-1; i >= 0; i--)
+    {
+        logCard(deck[i]);
     }
 }
 

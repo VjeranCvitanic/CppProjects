@@ -1,12 +1,33 @@
 #include "../inc/Briscola.h"
+#include "../inc/HumanPlayer.h"
+#include "../inc/Bot.h"
+#include <tuple>
+#include <vector>
 
 int main()
 {
-    Logger::logger_setup("./out/briscola/logs/", nullptr, INFO, true);
+    Logger::logger_setup("./out/briscola/logs/", nullptr, DEBUG, true);
     LOG_INFO("START");
 
-    Briscola b;
-    b.printDeck();
+    PlayerBase* player1 = new HumanPlayer();
+    PlayerBase* player2 = new Bot();
+    //PlayerBase* player3 = new Bot();
+    //PlayerBase* player4 = new Bot();
+    std::vector<std::tuple<PlayerBase*, int>> players = {std::make_tuple(player1, 0), std::make_tuple(player2, 0)};
+    //std::vector<std::tuple<PlayerBase*, int>> players = {std::make_tuple(player1, 0), std::make_tuple(player2, 0), std::make_tuple(player3, 0), std::make_tuple(player4, 0)};
+    Briscola b(Two);
+    b.setPlayers(players);
 
-    b.Game();
+    b.logDeck();
+
+    int winner = b.Game();
+    LOG_INFO("Winner: player ", winner + 1);
+    b.printGameStateDefault();
 }
+
+//TODO
+/*
+    tressette
+    akuze
+    tournament
+*/

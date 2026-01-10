@@ -15,8 +15,12 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # =========================
 add_library(card_core
     ../../HashMap/MyHashMap/src/Logger.cpp
+    ../Chess_bitmap/src/Utils.cpp
     src/Cards.cpp
     src/CardsGame.cpp
+    src/PlayerBase.cpp
+    src/HumanPlayer.cpp
+    src/Bot.cpp
 )
 
 target_include_directories(card_core PUBLIC src)

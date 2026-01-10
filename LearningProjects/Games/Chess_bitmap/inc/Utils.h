@@ -16,6 +16,7 @@ void print(T data)
     std::cout << data;
 }
 
+void printLines();
 void print(int8_t data);
 void print(uint8_t data);
 

@@ -4,8 +4,11 @@
 #include <iostream>
 #include <vector>
 #include <tuple>
+#include <algorithm>
+#include <random>
 
 #include "../../../HashMap/MyHashMap/include/Logger.h"
+#include "../../Chess_bitmap/inc/Utils.h"
 
 enum Color
 {
@@ -42,7 +45,11 @@ public:
 
     std::vector<Card> getDeck();
     Card getCard(int8_t pos);
-    void printDeck();
+    void logDeck();
+
+    static void logCard(Card card);
+    static void logCards(std::vector<Card> cards);
+    static void printToConsole(std::vector<Card> cards);
 
     Card popCard();
 
@@ -56,6 +63,7 @@ public:
     static std::string NumberToString(Number number);
 
     static Card makeCard(Color color, Number number);
+    static Number intToNumber(int8_t number);
 private:
     std::vector<Card> deck;
     std::vector<Card> playedCards;
