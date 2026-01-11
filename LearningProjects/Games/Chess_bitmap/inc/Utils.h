@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <iostream>
 
-class Board;
+class Points;
 
 typedef unsigned long U32;
 typedef unsigned long long U64;
@@ -16,8 +16,9 @@ void print(T data)
     std::cout << data;
 }
 
-void printLines();
 void print(int8_t data);
 void print(uint8_t data);
+void print(Points p);
 
 void newLine();
+void printLines();

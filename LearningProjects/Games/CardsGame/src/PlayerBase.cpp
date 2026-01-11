@@ -1,5 +1,6 @@
 #include "../inc/PlayerBase.h"
 #include <cstdint>
+#include <vector>
 
 PlayerBase::PlayerBase()
 {
@@ -31,7 +32,7 @@ void PlayerBase::updateLastPlayedCard(Card playedCard, int playerId)
     playedCardsInRound.cards.push_back(playedCard);
 }
 
-void PlayerBase::setRoundEndDefault(bool winner, int8_t roundValue)
+void PlayerBase::setRoundEndDefault(bool winner, Points roundValue)
 {
     playedCardsInRound.cards.clear();
     totalPoints = gamePtr->gameState.totalPoints;
@@ -44,7 +45,7 @@ void PlayerBase::setRoundEndDefault(bool winner, int8_t roundValue)
     }
 }
 
-void PlayerBase::setRoundEnd(bool winner, int8_t roundValue)
+void PlayerBase::setRoundEnd(bool winner, Points roundValue)
 {
     setRoundEndDefault(winner, roundValue);
 }
@@ -95,4 +96,16 @@ bool PlayerBase::checkConstraints(Card card)
 void PlayerBase::sortHand()
 {
     hand.Sort(hand, gamePtr);
+}
+
+void PlayerBase::dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards)
+{
+    LOG_INFO("Dealt cards: ");
+    for(auto& tuple : dCards)
+    {
+        LOG_INFO("Player ");
+        LOG_INFO(+std::get<0>(tuple)->getPlayerId());
+        LOG_INFO(" draw ");
+        LOG_INFO(Cards::CardToString(std::get<1>(tuple)));
+    }
 }

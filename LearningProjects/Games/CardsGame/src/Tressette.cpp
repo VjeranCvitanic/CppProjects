@@ -1,5 +1,6 @@
 #include "../inc/Tressette.h"
 #include <cstdint>
+#include <tuple>
 
 Tressette::Tressette(NumPlayers _numPlayers) :
     CardsGame(_numPlayers)
@@ -13,7 +14,7 @@ int8_t Tressette::Game()
     CardsGame::Game();
     int8_t winner = 0;
 
-    dealInitialCards(10);
+    dealCards(10 * numPlayers);
 
     while(deck.getDeck().cards.size() > 0)
     {
@@ -160,16 +161,16 @@ int8_t Tressette::numberStrength(Number number) const
     }
 }
 
-int8_t Tressette::numberValue(Number number)
+Points Tressette::numberValue(Number number)
 {
     switch (number) {
-        case Asso:     return 3;
-        case Tre:      return 1;
-        case Due:      return 1;
-        case Re:       return 1;
-        case Cavallo:  return 1;
-        case Fante:    return 1;
-        default:      return 0;
+        case Asso:     return Points(1, 0);
+        case Tre:      
+        case Due:      
+        case Re:       
+        case Cavallo:  
+        case Fante:   return Points(0, 1);
+        default:      return Points(0, 0);
     }
 }
 
@@ -363,4 +364,14 @@ bool Tressette::checkConstraints(const Hand& hand, Card card)
     }
 
     return true;
+}
+
+void Tressette::InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards)
+{
+    for(auto& p : gameState.players)
+    {
+        PlayerBase* ptr = std::get<0>(p);
+
+        ptr->dealtCards(dealtCards);
+    }
 }

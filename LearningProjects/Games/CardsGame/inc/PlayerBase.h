@@ -14,8 +14,8 @@ public:
     void ReceiveCards(Hand cards);
     void ReceiveCard(Card card);
     Hand GetHand();
-    virtual void setRoundEnd(bool winner, int8_t roundValue);
-    void setRoundEndDefault(bool winner, int8_t roundValue);
+    virtual void setRoundEnd(bool winner, Points roundValue);
+    void setRoundEndDefault(bool winner, Points roundValue);
     void setGamePtr(CardsGame* ptr);
     void setPlayerId(int8_t id);
     virtual void updateLastPlayedCard(Card playedCard, int playerId);
@@ -24,10 +24,11 @@ public:
     void setTeammateId(int8_t id);
     int8_t getTeammateId();
     int8_t getPlayerId();
+    virtual void dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards);
 protected:
     Hand hand;
-    int totalPoints = 0;
-    int myPoints = 0;
+    Points totalPoints = 0;
+    Points myPoints = 0;
     int8_t playerId = 0;
     int8_t teammateId = -1;
 

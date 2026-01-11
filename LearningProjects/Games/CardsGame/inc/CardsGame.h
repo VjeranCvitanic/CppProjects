@@ -2,6 +2,7 @@
 
 #include "Cards.h"
 #include <cstdint>
+#include <tuple>
 #include <vector>
 
 class PlayerBase;
@@ -18,11 +19,28 @@ enum GameType
     TressetteGame
 };
 
+struct Points {
+    int punta;
+    int bella;
+
+    Points(int p = 0, int b = 0) : punta(p), bella(b) {}
+
+    Points& operator+=(const Points& other) {
+        punta += other.punta;
+        bella += other.bella;
+        return *this;
+    }
+};
+
+inline std::ostream& operator<<(std::ostream& os, const Points& p) {
+    return os << "(" << p.punta << ", " << p.bella << ")";
+}
+
 struct GameState
 {
 public:
-    std::vector<std::tuple<PlayerBase*, int>> players;
-    int totalPoints = 0;
+    std::vector<std::tuple<PlayerBase*, Points>> players;
+    Points totalPoints;
     int roundNumber = 0;
 };
 
@@ -37,7 +55,7 @@ public:
     Hand getDeck();
     Card getCard(int8_t pos);
     virtual int8_t Game();
-    void setPlayers(std::vector<std::tuple<PlayerBase*, int>> players);
+    void setPlayers(std::vector<std::tuple<PlayerBase*, Points>> players);
     void informPlayers(Hand playedHand, Card roundWinner, int8_t winnerPos);
     void informPlayers(Card playedCard, int playerId);
 
@@ -50,6 +68,8 @@ public:
 
     virtual Color getStrongColor() const;
     virtual Card getLastCard() const;
+
+    virtual void InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards);
 
 protected:
     GameType gameType;
@@ -66,10 +86,9 @@ protected:
     int8_t HandWinner(Hand& playedHand, Card& winnerCard);
     Hand drawCards(int8_t numCards);
     void dealCards(int8_t numCards);
-    void dealInitialCards(int8_t numCards);
     virtual void playRound();
-    int8_t calculateRoundValue(Hand playedHand);
-    virtual int8_t numberValue(Number number) = 0;
+    Points calculateRoundValue(Hand playedHand);
+    virtual Points numberValue(Number number) = 0;
 
     void logStartRound();
     void InitRound();

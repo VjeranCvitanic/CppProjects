@@ -14,7 +14,7 @@ public:
     Briscola(NumPlayers _numPlayers = Two);
     int8_t Game() override;
     int8_t numberStrength(Number number) const override;
-    int8_t numberValue(Number number) override;
+    Points numberValue(Number number) override;
     Color getStrongColor() const override;
     Card getLastCard() const override;
 

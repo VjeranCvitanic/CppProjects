@@ -13,7 +13,7 @@ int main()
     PlayerBase* player2 = new Bot();
     //PlayerBase* player3 = new Bot();
     //PlayerBase* player4 = new Bot();
-    std::vector<std::tuple<PlayerBase*, int>> players = {std::make_tuple(player1, 0), std::make_tuple(player2, 0)};
+    std::vector<std::tuple<PlayerBase*, Points>> players = {std::make_tuple(player1, 0), std::make_tuple(player2, 0)};
     //std::vector<std::tuple<PlayerBase*, int>> players = {std::make_tuple(player1, 0), std::make_tuple(player2, 0), std::make_tuple(player3, 0), std::make_tuple(player4, 0)};
     Tressette b(Two);
     b.setPlayers(players);
@@ -24,9 +24,3 @@ int main()
     LOG_INFO("Winner: player ", winner + 1);
     b.printGameStateDefault();
 }
-
-// TODO
-/*
-    see other player's drawn cards
-    value of cards in tressette is /3
-*/

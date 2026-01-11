@@ -12,4 +12,5 @@ public:
     void updateLastPlayedCard(Card playedCard, int playerId) override;
 
 private:
+    std::vector<std::tuple<PlayerBase*, Card>> drawnCards;
 };

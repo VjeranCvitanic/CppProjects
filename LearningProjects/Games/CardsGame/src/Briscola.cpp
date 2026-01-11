@@ -19,7 +19,7 @@ int8_t Briscola::Game()
     CardsGame::Game();
     int8_t winner = 0;
 
-    dealInitialCards(2);
+    dealCards(2 * numPlayers);
 
     while(deck.getDeck().cards.size() > 0)
     {
@@ -86,15 +86,15 @@ int8_t Briscola::numberStrength(Number number) const
     }
 }
 
-int8_t Briscola::numberValue(Number number)
+Points Briscola::numberValue(Number number)
 {
     switch (number) {
-        case Asso:     return 11;
-        case Tre:      return 10;
-        case Re:       return 4;
-        case Cavallo:  return 3;
-        case Fante:    return 2;
-        default:      return 0;
+        case Asso:     return Points(11, 0);
+        case Tre:      return Points(10, 0);
+        case Re:       return Points(4, 0);
+        case Cavallo:  return Points(3, 0);
+        case Fante:    return Points(2, 0);
+        default:      return Points(0, 0);
     }
 }
 

@@ -2,6 +2,7 @@
 #include "../inc/PlayerBase.h"
 #include <cstdint>
 #include <tuple>
+#include <vector>
 
 CardsGame::CardsGame(NumPlayers _numPlayers) :
     numPlayers(_numPlayers)
@@ -15,6 +16,11 @@ int8_t CardsGame::Game()
         std::get<0>(p)->startGame();
     }
     return 0;
+}
+
+inline Points operator+(Points lhs, const Points& rhs) {
+    lhs += rhs;
+    return lhs;
 }
 
 GameType CardsGame::getGameType()
@@ -36,7 +42,7 @@ void CardsGame::logDeck()
     deck.logDeck();
 }
 
-void CardsGame::setPlayers(std::vector<std::tuple<PlayerBase*, int>> _players)
+void CardsGame::setPlayers(std::vector<std::tuple<PlayerBase*, Points>> _players)
 {
     if(_players.size() != numPlayers)
     {
@@ -65,7 +71,7 @@ void CardsGame::setPlayers(std::vector<std::tuple<PlayerBase*, int>> _players)
 
 void CardsGame::informPlayers(Hand playedHand, Card roundWinner, int8_t winnerPos)
 {
-    int8_t roundValue = calculateRoundValue(playedHand);
+    Points roundValue = calculateRoundValue(playedHand);
 
     gameState.totalPoints += roundValue;
 
@@ -90,9 +96,9 @@ void CardsGame::informPlayers(Card playedCard, int playerId)
     }
 }
 
-int8_t CardsGame::calculateRoundValue(Hand playedHand)
+Points CardsGame::calculateRoundValue(Hand playedHand)
 {
-    int roundValue = 0;
+    Points roundValue;
 
     for(auto& card : playedHand.cards)
     {
@@ -106,21 +112,24 @@ void CardsGame::dealCards(int8_t numCards)
 {
     Hand drawnCards = drawCards(numCards);
 
+    std::vector<std::tuple<PlayerBase*, Card>> dealtCards;
+
     for(int i = 0; i < numCards; i++)
     {
-        std::get<0>(gameState.players[(i + nextToPlayIndex) % numPlayers])->ReceiveCard(drawnCards[i]);
+        PlayerBase* ptr = std::get<0>(gameState.players[(i + nextToPlayIndex) % numPlayers]);
+        ptr->ReceiveCard(drawnCards[i]);
+        dealtCards.push_back(std::make_tuple(ptr, drawnCards[i]));
     }
+
+    if(gameState.roundNumber > 0)
+        InformDealtCards(dealtCards);
 }
 
-void CardsGame::dealInitialCards(int8_t numCards)
+void CardsGame::InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards)
 {
-    Hand drawnCards = drawCards(numCards * numPlayers);
-
-    for(int i = 0; i < numCards * numPlayers; i++)
-    {
-        std::get<0>(gameState.players[(i) % numPlayers])->ReceiveCard(drawnCards[i]);
-    }
+    return;
 }
+
 
 int8_t CardsGame::HandWinner(Hand& playedHand, Card& winnerCard)
 {
@@ -250,4 +259,12 @@ Card CardsGame::getLastCard() const
 bool CardsGame::checkConstraints(const Hand& hand, Card card)
 {
     return true;
+}
+
+void print(Points p)
+{
+    print(p.punta);
+    print(" punti e ");
+    print(p.bella);
+    print(" bella");
 }

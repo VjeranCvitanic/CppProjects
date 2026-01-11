@@ -42,11 +42,13 @@ public:
     Tressette(NumPlayers _numPlayers = Two);
     int8_t Game() override;
     int8_t numberStrength(Number number) const override;
-    int8_t numberValue(Number number) override;
+    Points numberValue(Number number) override;
 
     Card StrongerCard(Card card1, Card card2) override;
     void playRound() override;
     bool checkConstraints(const Hand& hand, Card card) override;
+    void InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards) override;
+
 private:
     std::vector<std::tuple<PlayerBase*, std::vector<AcussoType>>> Acussos = {};
     Color firstCardPlayedInRoundColor = InvalidColor;

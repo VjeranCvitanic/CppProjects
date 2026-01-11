@@ -60,7 +60,7 @@ Card HumanPlayer::parseInput()
     return std::make_tuple(InvalidColor, InvalidNumber);
 }
 
-void HumanPlayer::setRoundEnd(bool winner, int8_t roundValue)
+void HumanPlayer::setRoundEnd(bool winner, Points roundValue)
 {
     setRoundEndDefault(winner, roundValue);
     print("Round ended. You (Id: "), print(playerId), print(") ");
@@ -135,7 +135,7 @@ void HumanPlayer::startNewRound()
 {
     PlayerBase::startNewRound();
     printLines();
-    print("New round started.\nYour hand: ");
+    print("New round started.\nYour hand:");
     printHand();
     printLines();
 }
@@ -159,4 +159,18 @@ void HumanPlayer::startGame()
         newLine();
     }
     printLines();
+}
+
+void HumanPlayer::dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards)
+{
+    PlayerBase::dealtCards(dCards);
+    print("Dealt cards:\n");
+    for(auto& tuple : dCards)
+    {
+        print("Player ");
+        print(std::get<0>(tuple)->getPlayerId());
+        print(" draw ");
+        print(Cards::CardToString(std::get<1>(tuple)));
+        newLine();
+    }
 }

@@ -65,8 +65,11 @@ void Cards::logCards(Hand hand)
 
 void Cards::printToConsole(Hand hand)
 {
+    Color last = InvalidColor;
     for(auto& card : hand.cards)
     {
+        if(Cards::getColor(card) != last)
+            last = Cards::getColor(card), newLine();
         print(Cards::CardToString(card));
         print(", ");
     }

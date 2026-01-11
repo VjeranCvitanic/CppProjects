@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 
-
 #define MAX_NUM_LOGS_IN_ROTATION 9
 
 #define DEBUG 1
