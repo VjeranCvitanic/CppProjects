@@ -1,6 +1,7 @@
 #include "../inc/Cards.h"
 #include <tuple>
 #include <vector>
+#include "../inc/CardsGame.h"
 
 Cards::Cards()
 {
@@ -8,7 +9,7 @@ Cards::Cards()
     CreateDeck();
 }
 
-std::vector<Card> Cards::getDeck()
+Hand Cards::getDeck()
 {
     return deck;
 }
@@ -32,7 +33,7 @@ int8_t Cards::findFreeSlot(int* flags)
 
 void Cards::CreateDeck()
 {
-    deck.resize(DECK_SIZE);
+    deck.cards.resize(DECK_SIZE);
     int flags[DECK_SIZE] = {0};
     for (int c = Spade; c < InvalidColor; c++)
     {
@@ -54,17 +55,17 @@ void Cards::logCard(Card card)
 {
     LOG_DEBUG(CardToString(card));
 }
-void Cards::logCards(std::vector<Card> cards)
+void Cards::logCards(Hand hand)
 {
-    for(auto& card : cards)
+    for(auto& card : hand.cards)
     {
         logCard(card);
     }
 }
 
-void Cards::printToConsole(std::vector<Card> cards)
+void Cards::printToConsole(Hand hand)
 {
-    for(auto& card : cards)
+    for(auto& card : hand.cards)
     {
         print(Cards::CardToString(card));
         print(", ");
@@ -81,6 +82,11 @@ Number Cards::intToNumber(int8_t number)
     return InvalidNumber;
 }
 
+bool Cards::isCardInHand(Hand hand, Card card)
+{
+    return std::find(hand.cards.begin(), hand.cards.end(), card) == hand.cards.end() ? false : true;
+}
+
 void Cards::logDeck()
 {
     LOG_DEBUG("Deck:");
@@ -90,27 +96,27 @@ void Cards::logDeck()
     }
 }
 
-std::vector<Card> Cards::GetPlayedCards()
+Hand Cards::GetPlayedCards()
 {
     return playedCards;
 }
 
 Card Cards::popCard()
 {
-    if(deck.empty())
+    if(deck.cards.empty())
     {
         LOG_ERROR("Deck is empty!");
         return makeCard(InvalidColor, InvalidNumber);
     }
 
-    Card topCard = deck.back();
-    deck.pop_back();
+    Card topCard = deck.cards.back();
+    deck.cards.pop_back();
     return topCard;
 }
 
 void Cards::AddPlayedCard(Card card)
 {
-    playedCards.push_back(card);
+    playedCards.cards.push_back(card);
 }
 
 Color Cards::getColor(Card card)
@@ -179,3 +185,37 @@ std::string Cards::NumberToString(Number number)
             return "InvalidNumber";
     }
 }
+
+void Hand::Sort(Hand& hand, CardsGame* gamePtr)
+{
+    std::vector<Hand> ByColor;
+    ByColor.resize(4);
+
+    for(auto& card : hand.cards)
+    {
+        InsertByNumber(ByColor[Cards::getColor(card)], card, gamePtr);
+    }
+
+    hand.cards.clear();
+
+    for(auto& h : ByColor)
+        hand.cards.insert(hand.cards.end(), h.cards.begin(), h.cards.end());
+}
+
+void Hand::InsertByNumber(Hand& hand, Card card, const CardsGame* game)
+{
+    auto it = hand.cards.begin();
+
+    for (; it != hand.cards.end(); ++it)
+    {
+        if (game->numberStrength(Cards::getNumber(*it)) >
+            game->numberStrength(Cards::getNumber(card)))
+        {
+            break;
+        }
+    }
+
+    hand.cards.insert(it, card);
+}
+
+

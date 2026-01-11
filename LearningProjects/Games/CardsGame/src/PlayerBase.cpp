@@ -6,15 +6,17 @@ PlayerBase::PlayerBase()
     gamePtr = nullptr;
 }
 
-void PlayerBase::ReceiveCards(std::vector<Card> cards)
+void PlayerBase::ReceiveCards(Hand cards)
 {
-    hand.insert(std::end(hand), std::begin(cards), std::end(cards));
+    hand.cards.insert(std::end(hand.cards), std::begin(cards.cards), std::end(cards.cards));
+    sortHand();
 }
 void PlayerBase::ReceiveCard(Card card)
 {
-    hand.push_back(card);
+    hand.cards.push_back(card);
+    sortHand();
 }
-std::vector<Card> PlayerBase::GetHand()
+Hand PlayerBase::GetHand()
 {
     return hand;
 }
@@ -26,12 +28,12 @@ void PlayerBase::setGamePtr(CardsGame* ptr)
 
 void PlayerBase::updateLastPlayedCard(Card playedCard, int playerId)
 {
-    playedCardsInRound.push_back(playedCard);
+    playedCardsInRound.cards.push_back(playedCard);
 }
 
 void PlayerBase::setRoundEndDefault(bool winner, int8_t roundValue)
 {
-    playedCardsInRound.clear();
+    playedCardsInRound.cards.clear();
     totalPoints = gamePtr->gameState.totalPoints;
     LOG_DEBUG("Total points: ", totalPoints);
 
@@ -49,7 +51,7 @@ void PlayerBase::setRoundEnd(bool winner, int8_t roundValue)
 
 bool PlayerBase::isCardInHand(Card card)
 {
-    return std::find(hand.begin(), hand.end(), card) == hand.end() ? false : true;
+    return Cards::isCardInHand(hand, card);
 }
 
 void PlayerBase::printHand()
@@ -78,4 +80,19 @@ void PlayerBase::setTeammateId(int8_t id)
 int8_t PlayerBase::getTeammateId()
 {
     return teammateId;
+}
+
+int8_t PlayerBase::getPlayerId()
+{
+    return playerId;
+}
+
+bool PlayerBase::checkConstraints(Card card)
+{
+    return gamePtr->checkConstraints(hand, card);
+}
+
+void PlayerBase::sortHand()
+{
+    hand.Sort(hand, gamePtr);
 }

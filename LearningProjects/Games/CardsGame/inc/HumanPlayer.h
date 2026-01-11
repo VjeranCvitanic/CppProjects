@@ -10,6 +10,7 @@ enum ReturnVal
     RETURN_INVALID_INPUT,
     RETURN_HELP,
     RETURN_GAME_STATE,
+    RETURN_CONSTRAINT,
     DEFAULT
 };
 
@@ -19,7 +20,7 @@ public:
     HumanPlayer() = default;
     ~HumanPlayer() override = default;
 
-    Card PlayCard(std::vector<Card> playedHand) override;
+    Card PlayCard(Hand playedHand) override;
     void startNewRound() override;
     void startGame() override;
 

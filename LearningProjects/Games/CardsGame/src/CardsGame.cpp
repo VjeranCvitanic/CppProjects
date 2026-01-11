@@ -22,7 +22,7 @@ GameType CardsGame::getGameType()
     return gameType;
 }
 
-std::vector<Card> CardsGame::getDeck()
+Hand CardsGame::getDeck()
 {
     return deck.getDeck();
 }
@@ -63,7 +63,7 @@ void CardsGame::setPlayers(std::vector<std::tuple<PlayerBase*, int>> _players)
     }
 }
 
-void CardsGame::informPlayers(std::vector<Card> playedHand, Card roundWinner, int8_t winnerPos)
+void CardsGame::informPlayers(Hand playedHand, Card roundWinner, int8_t winnerPos)
 {
     int8_t roundValue = calculateRoundValue(playedHand);
 
@@ -90,11 +90,11 @@ void CardsGame::informPlayers(Card playedCard, int playerId)
     }
 }
 
-int8_t CardsGame::calculateRoundValue(std::vector<Card> playedHand)
+int8_t CardsGame::calculateRoundValue(Hand playedHand)
 {
     int roundValue = 0;
 
-    for(auto& card : playedHand)
+    for(auto& card : playedHand.cards)
     {
         roundValue += numberValue(Cards::getNumber(card));
     }
@@ -104,7 +104,7 @@ int8_t CardsGame::calculateRoundValue(std::vector<Card> playedHand)
 
 void CardsGame::dealCards(int8_t numCards)
 {
-    std::vector<Card> drawnCards = drawCards(numCards);
+    Hand drawnCards = drawCards(numCards);
 
     for(int i = 0; i < numCards; i++)
     {
@@ -114,7 +114,7 @@ void CardsGame::dealCards(int8_t numCards)
 
 void CardsGame::dealInitialCards(int8_t numCards)
 {
-    std::vector<Card> drawnCards = drawCards(numCards * numPlayers);
+    Hand drawnCards = drawCards(numCards * numPlayers);
 
     for(int i = 0; i < numCards * numPlayers; i++)
     {
@@ -122,11 +122,11 @@ void CardsGame::dealInitialCards(int8_t numCards)
     }
 }
 
-int8_t CardsGame::HandWinner(std::vector<Card>& playedHand, Card& winnerCard)
+int8_t CardsGame::HandWinner(Hand& playedHand, Card& winnerCard)
 {
-    if(playedHand.size() != HandSize)
+    if(playedHand.cards.size() != handSize)
     {
-        LOG_ERROR("Invalid playedHand size: ", playedHand.size(), ", num of players: ", numPlayers);
+        LOG_ERROR("Invalid playedHand size: ", playedHand.cards.size(), ", num of players: ", numPlayers);
         winnerCard = Cards::makeCard(InvalidColor, InvalidNumber);
         return -1;
     }
@@ -135,21 +135,21 @@ int8_t CardsGame::HandWinner(std::vector<Card>& playedHand, Card& winnerCard)
 }
 
 
-int8_t CardsGame::StrongestCard(const std::vector<Card>& playedHand, Card& winnerCard)
+int8_t CardsGame::StrongestCard(const Hand& playedHand, Card& winnerCard)
 {
-    if(playedHand.empty())
+    if(playedHand.cards.empty())
     {
         LOG_ERROR("Empty playedHand");
         winnerCard = Cards::makeCard(InvalidColor, InvalidNumber);
         return -1;
     }
 
-    Card winner = playedHand[0];
+    Card winner = playedHand.cards[0];
     int winnerPos = 0;
 
-    for(int i = 1; i < playedHand.size(); i++)
+    for(int i = 1; i < playedHand.cards.size(); i++)
     {
-        Card w = StrongerCard(winner, playedHand[i]);
+        Card w = StrongerCard(winner, playedHand.cards[i]);
         if(w != winner)
         {
             winner = w;
@@ -161,12 +161,12 @@ int8_t CardsGame::StrongestCard(const std::vector<Card>& playedHand, Card& winne
     return winnerPos;
 }
 
-std::vector<Card> CardsGame::drawCards(int8_t numCards)
+Hand CardsGame::drawCards(int8_t numCards)
 {
-    std::vector<Card> drawnCards;
+    Hand drawnCards;
     for(int i = 0; i < numCards; i++)
     {
-        drawnCards.push_back(deck.popCard());
+        drawnCards.cards.push_back(deck.popCard());
     }
 
     return drawnCards;
@@ -218,12 +218,13 @@ void CardsGame::notifyStartRound()
 void CardsGame::playRound()
 {
     InitRound();
-    std::vector<Card> playedHand;
-    for(int i = nextToPlayIndex; i < nextToPlayIndex + HandSize; i++)
+    Hand playedHand;
+    for(int i = nextToPlayIndex; i < nextToPlayIndex + handSize; i++)
     {
         Card playedCard = std::get<0>(gameState.players[i%numPlayers])->PlayCard(playedHand);
+
         LOG_INFO("Player ", i%numPlayers + 1, " played: ", Cards::CardToString(playedCard));
-        playedHand.push_back(playedCard);
+        playedHand.cards.push_back(playedCard);
         informPlayers(playedCard, i % numPlayers);
     }
 
@@ -236,12 +237,17 @@ void CardsGame::playRound()
     LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerPos + 1, "player points: ", std::get<1>(gameState.players[winnerPos]));
 }
 
-Color CardsGame::getStrongColor()
+Color CardsGame::getStrongColor() const
 {
     return InvalidColor;
 }
 
-Card CardsGame::getLastCard()
+Card CardsGame::getLastCard() const
 {
     return std::make_tuple(InvalidColor, InvalidNumber);
+}
+
+bool CardsGame::checkConstraints(const Hand& hand, Card card)
+{
+    return true;
 }

@@ -9,6 +9,8 @@ Briscola::Briscola(NumPlayers _numPlayers) :
     LOG_INFO("Strong suite: ", Cards::ColorToString(strongColor));
     LOG_INFO("Last card: ", Cards::CardToString(lastCard));
 
+    handSize = HandSize;
+
     gameType = BriscolaGame;
 }
 
@@ -19,9 +21,9 @@ int8_t Briscola::Game()
 
     dealInitialCards(2);
 
-    while(deck.getDeck().size() > 0)
+    while(deck.getDeck().cards.size() > 0)
     {
-        dealCards(HandSize);
+        dealCards(handSize);
 
         playRound();
     }
@@ -67,7 +69,7 @@ Card Briscola::StrongerCard(Card card1, Card card2)
     } 
 }
 
-int8_t Briscola::numberStrength(Number number)
+int8_t Briscola::numberStrength(Number number) const
 {
     switch (number) {
         case Asso:     return 10;
@@ -112,12 +114,12 @@ void Briscola::printGameState()
     printLines();
 }
 
-Color Briscola::getStrongColor()
+Color Briscola::getStrongColor() const
 {
     return strongColor;
 }
 
-Card Briscola::getLastCard()
+Card Briscola::getLastCard() const
 {
     return lastCard;
 }

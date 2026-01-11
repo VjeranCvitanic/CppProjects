@@ -3,17 +3,17 @@
 #include "Cards.h"
 #include <cstdint>
 #include <vector>
-#include "Briscola.h"
 #include "CardsGame.h"
+
 class PlayerBase
 {
 public:
     PlayerBase();
     virtual ~PlayerBase() = default;
-    virtual Card PlayCard(std::vector<Card> playedHand) = 0;
-    void ReceiveCards(std::vector<Card> cards);
+    virtual Card PlayCard(Hand playedHand) = 0;
+    void ReceiveCards(Hand cards);
     void ReceiveCard(Card card);
-    std::vector<Card> GetHand();
+    Hand GetHand();
     virtual void setRoundEnd(bool winner, int8_t roundValue);
     void setRoundEndDefault(bool winner, int8_t roundValue);
     void setGamePtr(CardsGame* ptr);
@@ -23,16 +23,19 @@ public:
     virtual void startGame();
     void setTeammateId(int8_t id);
     int8_t getTeammateId();
+    int8_t getPlayerId();
 protected:
-    std::vector<Card> hand;
+    Hand hand;
     int totalPoints = 0;
     int myPoints = 0;
     int8_t playerId = 0;
     int8_t teammateId = -1;
 
     CardsGame* gamePtr;
-    std::vector<Card> playedCardsInRound;
+    Hand playedCardsInRound;
 
     bool isCardInHand(Card card);
     void printHand();
+    bool checkConstraints(Card card);
+    void sortHand();
 };

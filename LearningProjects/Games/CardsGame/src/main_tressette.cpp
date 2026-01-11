@@ -6,7 +6,7 @@
 
 int main()
 {
-    Logger::logger_setup("./out/briscola/logs/", nullptr, DEBUG, true);
+    Logger::logger_setup("./out/tressette/logs/", nullptr, DEBUG, true);
     LOG_INFO("START");
 
     PlayerBase* player1 = new HumanPlayer();
@@ -24,3 +24,9 @@ int main()
     LOG_INFO("Winner: player ", winner + 1);
     b.printGameStateDefault();
 }
+
+// TODO
+/*
+    see other player's drawn cards
+    value of cards in tressette is /3
+*/

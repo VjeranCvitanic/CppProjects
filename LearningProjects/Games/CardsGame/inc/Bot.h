@@ -8,7 +8,7 @@ public:
     Bot() = default;
     ~Bot() override = default;
 
-    Card PlayCard(std::vector<Card> playedHand) override;
+    Card PlayCard(Hand playedHand) override;
     void updateLastPlayedCard(Card playedCard, int playerId) override;
 
 private:

@@ -1,15 +1,15 @@
 #include "../inc/Bot.h"
 
-Card Bot::PlayCard(std::vector<Card> playedHand)
+Card Bot::PlayCard(Hand playedHand)
 {
-    if(hand.empty())
+    if(hand.cards.empty())
     {
         LOG_ERROR("No cards in hand to play");
         return Cards::makeCard(InvalidColor, InvalidNumber);
     }
 
-    Card playedCard = hand.back();
-    hand.pop_back();
+    Card playedCard = hand.cards.back();
+    hand.cards.pop_back();
     return playedCard;
 }
 
