@@ -2,7 +2,6 @@
 
 #include "CardsGame.h"
 #include "PlayerBase.h"
-#include <vector>
 
 enum ReturnVal
 {
@@ -21,7 +20,7 @@ public:
     HumanPlayer() = default;
     ~HumanPlayer() override = default;
 
-    Card PlayCard(Hand playedHand) override;
+    Card PlayCard(CardSet playedHand) override;
     void startNewRound() override;
     void startGame() override;
     void dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards) override;

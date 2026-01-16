@@ -11,6 +11,7 @@
 #include "../../Chess_bitmap/inc/Utils.h"
 
 class CardsGame;
+class PlayerBase;
 
 enum Color
 {
@@ -39,57 +40,58 @@ enum Number
 #define DECK_SIZE 40
 
 typedef std::tuple<Color, Number> Card;
+typedef std::vector<Card> CardSet;
 
-class Hand
+class Deck
 {
 public:
-    std::vector<Card> cards;
+    friend class GameState;
+    friend class CardsGame;
+    friend class PlayerBase;
+    friend class HumanPlayer;
+    friend class Bot;
+    Deck();
+    Deck(bool full);
 
-    void Sort(Hand& hand, CardsGame* gamePtr);
-    void InsertByNumber(Hand& hand, Card card, const CardsGame* gamePtr);
+    CardSet getDeck() const;
 
-
-    operator std::vector<Card>() const
-    {
-        return cards;
-    }
-    Card& operator[](size_t i)
-    {
-        return cards[i];
-    }
-};
-
-class Cards
-{
-public:
-    Cards();
-
-    Hand getDeck();
+protected:
+    //getters
     Card getCard(int8_t pos);
-    void logDeck();
+    bool isCardInDeck(Card card);
 
-    static void logCard(Card card);
-    static void logCards(Hand cards);
-    static void printToConsole(Hand cards);
-
+    //setters
+    void InsertByNumber(Card card, const CardsGame* gamePtr);
+    void AddCard(Card card);
     Card popCard();
+    void Sort(CardsGame* gamePtr);
+    void eraseCard(Card card);
 
-    Hand GetPlayedCards();
-    void AddPlayedCard(Card card);
+    // print & log
+    void logDeck();
+    void printDeck();
 
-    static Color getColor(Card);
-    static Number getNumber(Card);
-    static std::string CardToString(Card card);
-    static std::string ColorToString(Color color);
-    static std::string NumberToString(Number number);
-
-    static Card makeCard(Color color, Number number);
-    static Number intToNumber(int8_t number);
-    static bool isCardInHand(Hand, Card card);
 private:
-    Hand deck;
-    Hand playedCards;
+    CardSet cards;
 
     int8_t findFreeSlot(int* flags);
     void CreateDeck();
 };
+
+namespace Cards
+{
+    Card makeCard(Color color, Number number);
+
+    Color getColor(Card);
+    Number getNumber(Card);
+
+    std::string CardToString(Card card);
+    std::string ColorToString(Color color);
+    std::string NumberToString(Number number);
+    Number intToNumber(int8_t number);
+
+    void logCard(Card card);
+    void logCards(CardSet cards);
+
+    bool isCardInCardSet(CardSet cards, Card card);
+}

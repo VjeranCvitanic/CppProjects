@@ -4,22 +4,21 @@
 #include <tuple>
 #include <vector>
 
-Card HumanPlayer::PlayCard(Hand playedHand)
+Card HumanPlayer::PlayCard(CardSet playedHand)
 {
-    if(hand.cards.empty())
+    if(hand.getDeck().empty())
     {
         LOG_ERROR("No cards in hand to play");
         return Cards::makeCard(InvalidColor, InvalidNumber);
     }
 
     Card playedCard = parseInput();
-    hand.cards.erase(std::remove(hand.cards.begin(), hand.cards.end(), playedCard), hand.cards.end());
+    hand.eraseCard(playedCard);
     return playedCard;
 }
 
 Card HumanPlayer::parseInput()
 {
-    print("Enter your card: Color (S, B, D, C), Number (1 - 13) / help (to see hand) / game (to see game state)\n");
     ReturnVal val = DEFAULT;
     Card card = std::make_tuple(InvalidColor, InvalidNumber);
     std::string input;
@@ -28,6 +27,7 @@ Card HumanPlayer::parseInput()
     {
         switch (val) {
             case RETURN_HELP:
+                print("Enter your card: Color (S, B, D, C), Number (1 - 13) / help (to see hand) / game (to see game state)\n");
                 printHand();
                 break;
             case RETURN_GAME_STATE:
@@ -37,7 +37,7 @@ Card HumanPlayer::parseInput()
                 print("Invalid input: "), print(input), print(", please try again\n");
                 break;
             case RETURN_SUCCESS:
-                if(isCardInHand(card))
+                if(isCardInDeck(card))
                     return card;
             case RETURN_INVALID_CARD:
                 print("Invalid card: "), print(input), print("\nHand: "), printHand(), print("please try again\n");
@@ -62,7 +62,7 @@ Card HumanPlayer::parseInput()
 
 void HumanPlayer::setRoundEnd(bool winner, Points roundValue)
 {
-    setRoundEndDefault(winner, roundValue);
+    PlayerBase::setRoundEnd(winner, roundValue);
     print("Round ended. You (Id: "), print(playerId), print(") ");
     if(winner)
         print("won");
@@ -149,15 +149,10 @@ void HumanPlayer::startGame()
     if(teammateId != -1)
         print("\nTeammate id: "),print(teammateId);
     newLine();
-    if(gamePtr->getGameType() == BriscolaGame)
-    {
-        print("Strong color: ");
-        print(Cards::ColorToString(gamePtr->getStrongColor()));
-        newLine();
-        print("Last card: ");
-        print(Cards::CardToString(gamePtr->getLastCard()));
-        newLine();
-    }
+    if(!gamePtr)
+        LOG_ERROR("gamePtr is nullptr");
+    LOG_DEBUG(gamePtr);
+    gamePtr->printGameState();
     printLines();
 }
 

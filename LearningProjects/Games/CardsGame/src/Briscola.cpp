@@ -1,12 +1,12 @@
 #include "../inc/Briscola.h"
 #include <cstdint>
 
-Briscola::Briscola(NumPlayers _numPlayers) :
-    CardsGame(_numPlayers)
+Briscola::Briscola(Game::Players& _players) :
+    CardsGame(_players)
 {
     lastCard = getCard(0);
     strongColor = Cards::getColor(lastCard);
-    LOG_INFO("Strong suite: ", Cards::ColorToString(strongColor));
+    LOG_INFO("Strong color: ", Cards::ColorToString(strongColor));
     LOG_INFO("Last card: ", Cards::CardToString(lastCard));
 
     handSize = HandSize;
@@ -21,14 +21,14 @@ int8_t Briscola::Game()
 
     dealCards(2 * numPlayers);
 
-    while(deck.getDeck().cards.size() > 0)
+    while(deck.getDeck().size() > 0)
     {
         dealCards(handSize);
 
         playRound();
     }
 
-    while(gameState.roundNumber < 10)
+    while(currRound.roundNumber < 10)
         playRound();
 
     return winner;
@@ -43,7 +43,7 @@ Card Briscola::StrongerCard(Card card1, Card card2)
 
     if(color1 == color2)
     {
-        if(numberStrength(number1) > numberStrength(number2))
+        if(getNumberStrength(number1) > getNumberStrength(number2))
         {
             return card1;
         }
@@ -69,7 +69,7 @@ Card Briscola::StrongerCard(Card card1, Card card2)
     } 
 }
 
-int8_t Briscola::numberStrength(Number number) const
+int8_t Briscola::getNumberStrength(Number number) const
 {
     switch (number) {
         case Asso:     return 10;
@@ -86,7 +86,7 @@ int8_t Briscola::numberStrength(Number number) const
     }
 }
 
-Points Briscola::numberValue(Number number)
+Points Briscola::getNumberValue(Number number)
 {
     switch (number) {
         case Asso:     return Points(11, 0);
@@ -101,7 +101,7 @@ Points Briscola::numberValue(Number number)
 void Briscola::printGameState()
 {
     printLines();
-    printGameStateDefault();
+    CardsGame::printGameState();
     print("Strong color: ");
     print(Cards::ColorToString(strongColor));
     newLine();
@@ -109,7 +109,7 @@ void Briscola::printGameState()
     print(Cards::CardToString(lastCard));
     newLine();
     print("Round number: ");
-    print(gameState.roundNumber);
+    print(currRound.roundNumber);
     newLine();
     printLines();
 }
@@ -122,4 +122,9 @@ Color Briscola::getStrongColor() const
 Card Briscola::getLastCard() const
 {
     return lastCard;
+}
+
+std::shared_ptr<CardsGame> Briscola::createGame(Game::Players& players)
+{
+    return std::make_unique<Briscola>(players);
 }

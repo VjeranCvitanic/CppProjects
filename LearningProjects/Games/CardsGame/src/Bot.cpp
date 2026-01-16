@@ -1,15 +1,15 @@
 #include "../inc/Bot.h"
 
-Card Bot::PlayCard(Hand playedHand)
+Card Bot::PlayCard(CardSet playedHand)
 {
-    if(hand.cards.empty())
+    if(hand.getDeck().empty())
     {
         LOG_ERROR("No cards in hand to play");
         return Cards::makeCard(InvalidColor, InvalidNumber);
     }
 
-    Card playedCard = hand.cards.back();
-    hand.cards.pop_back();
+    Card playedCard = hand.getDeck().back();
+    hand.popCard();
     return playedCard;
 }
 

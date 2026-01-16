@@ -1,0 +1,36 @@
+1 listening server
+creates tournaments
+
+each tournament is briscola to 4, tressette to 41 (ako je draw briscola to 3)
+creates matches (briscola to 4/ tressete to 41)
+
+creates games (one briscola game / one tressette game)
+
+has rounds
+
+
+
+
+
+tournament:
+	GetTournamentState
+	GetMatchState
+	GetGameState
+	GetRoundState
+	establishConn (id)
+
+	has to broadcast drawn cards (tressette)
+
+
+client:
+	
+	PlayCard (card)
+	SetPlayerId (+SetTeammateId)
+	
+	
+
+
+TODO:
+	busso, striscio, izlaz
+	grpc, proto
+	states have id, not pointer, only registry has pointer

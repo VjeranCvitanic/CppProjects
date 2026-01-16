@@ -2,27 +2,30 @@
 
 #include "Cards.h"
 #include "CardsGame.h"
+#include "GameState.h"
 #include "PlayerBase.h"
-#include <cstdint>
-#include <vector>
  
 #define HandSize 4
 
 class Briscola : public CardsGame
 {
 public:
-    Briscola(NumPlayers _numPlayers = Two);
-    int8_t Game() override;
-    int8_t numberStrength(Number number) const override;
-    Points numberValue(Number number) override;
-    Color getStrongColor() const override;
-    Card getLastCard() const override;
+    Briscola(Game::Players&);
 
-private:
+    int8_t Game() override;
+
+    // getters
+    int8_t getNumberStrength(Number number) const override;
+    Card getLastCard() const override;
+    void printGameState() override;
+
+    std::shared_ptr<CardsGame> createGame(Game::Players& players) override;
+
+protected:
     Color strongColor;
     Card lastCard;
 
+    Points getNumberValue(Number number) override;
     Card StrongerCard(Card card1, Card card2) override;
-
-    void printGameState() override;
+    virtual Color getStrongColor() const;
 };

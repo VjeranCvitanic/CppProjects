@@ -7,19 +7,14 @@ PlayerBase::PlayerBase()
     gamePtr = nullptr;
 }
 
-void PlayerBase::ReceiveCards(Hand cards)
-{
-    hand.cards.insert(std::end(hand.cards), std::begin(cards.cards), std::end(cards.cards));
-    sortHand();
-}
 void PlayerBase::ReceiveCard(Card card)
 {
     hand.cards.push_back(card);
     sortHand();
 }
-Hand PlayerBase::GetHand()
+CardSet PlayerBase::GetHand()
 {
-    return hand;
+    return hand.cards;
 }
 
 void PlayerBase::setGamePtr(CardsGame* ptr)
@@ -29,14 +24,13 @@ void PlayerBase::setGamePtr(CardsGame* ptr)
 
 void PlayerBase::updateLastPlayedCard(Card playedCard, int playerId)
 {
-    playedCardsInRound.cards.push_back(playedCard);
+    round.playedCardsInRound.cards.push_back(playedCard);
 }
 
-void PlayerBase::setRoundEndDefault(bool winner, Points roundValue)
+void PlayerBase::setRoundEnd(bool winner, Points roundValue)
 {
-    playedCardsInRound.cards.clear();
-    totalPoints = gamePtr->gameState.totalPoints;
-    LOG_DEBUG("Total points: ", totalPoints);
+    round.playedCardsInRound.cards.clear();
+    LOG_DEBUG("Total points: ", gamePtr->totalPoints);
 
     if(winner)
     {
@@ -45,19 +39,14 @@ void PlayerBase::setRoundEndDefault(bool winner, Points roundValue)
     }
 }
 
-void PlayerBase::setRoundEnd(bool winner, Points roundValue)
+bool PlayerBase::isCardInDeck(Card card)
 {
-    setRoundEndDefault(winner, roundValue);
-}
-
-bool PlayerBase::isCardInHand(Card card)
-{
-    return Cards::isCardInHand(hand, card);
+    return hand.isCardInDeck(card);
 }
 
 void PlayerBase::printHand()
 {
-    Cards::printToConsole(hand);
+    hand.printDeck();
 }
 
 void PlayerBase::startNewRound()
@@ -66,6 +55,7 @@ void PlayerBase::startNewRound()
 
 void PlayerBase::startGame()
 {
+    LOG_DEBUG("");
 }
 
 void PlayerBase::setPlayerId(int8_t id)
@@ -90,12 +80,12 @@ int8_t PlayerBase::getPlayerId()
 
 bool PlayerBase::checkConstraints(Card card)
 {
-    return gamePtr->checkConstraints(hand, card);
+    return gamePtr->checkConstraints(hand.cards, card);
 }
 
 void PlayerBase::sortHand()
 {
-    hand.Sort(hand, gamePtr);
+    hand.Sort(gamePtr);
 }
 
 void PlayerBase::dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards)
@@ -108,4 +98,9 @@ void PlayerBase::dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards)
         LOG_INFO(" draw ");
         LOG_INFO(Cards::CardToString(std::get<1>(tuple)));
     }
+}
+
+void PlayerBase::setTeamId(int id)
+{
+    teamId = id;
 }

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Cards.h"
-#include <cstdint>
-#include <vector>
 #include "CardsGame.h"
 
 class PlayerBase
@@ -10,32 +8,39 @@ class PlayerBase
 public:
     PlayerBase();
     virtual ~PlayerBase() = default;
-    virtual Card PlayCard(Hand playedHand) = 0;
-    void ReceiveCards(Hand cards);
+
+    // callbacks
+    virtual Card PlayCard(CardSet playedHand) = 0;
     void ReceiveCard(Card card);
-    Hand GetHand();
-    virtual void setRoundEnd(bool winner, Points roundValue);
-    void setRoundEndDefault(bool winner, Points roundValue);
-    void setGamePtr(CardsGame* ptr);
-    void setPlayerId(int8_t id);
-    virtual void updateLastPlayedCard(Card playedCard, int playerId);
     virtual void startNewRound();
     virtual void startGame();
-    void setTeammateId(int8_t id);
+    virtual void dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards);
+
+    // getters
     int8_t getTeammateId();
     int8_t getPlayerId();
-    virtual void dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards);
+    CardSet GetHand();
+
+    // setters
+    void setTeammateId(int8_t id);
+    void setTeamId(int id);
+    void setPlayerId(int8_t id);
+    void setGamePtr(CardsGame* ptr);
+    virtual void setRoundEnd(bool winner, Points roundValue);
+    virtual void updateLastPlayedCard(Card playedCard, int playerId);
+
 protected:
-    Hand hand;
+    Deck hand;
     Points totalPoints = 0;
     Points myPoints = 0;
     int8_t playerId = 0;
     int8_t teammateId = -1;
+    int teamId = -1;
 
     CardsGame* gamePtr;
-    Hand playedCardsInRound;
+    Round round;
 
-    bool isCardInHand(Card card);
+    bool isCardInDeck(Card card);
     void printHand();
     bool checkConstraints(Card card);
     void sortHand();

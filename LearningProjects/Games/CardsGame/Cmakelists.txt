@@ -18,6 +18,8 @@ add_library(card_core
     ../Chess_bitmap/src/Utils.cpp
     src/Cards.cpp
     src/CardsGame.cpp
+    src/CardsMatch.cpp
+    src/CardsTournament.cpp
     src/PlayerBase.cpp
     src/HumanPlayer.cpp
     src/Bot.cpp
@@ -26,21 +28,13 @@ add_library(card_core
 target_include_directories(card_core PUBLIC src)
 
 # =========================
-# Tressette executable
+# Tournament executable
 # =========================
-add_executable(tressette
-    src/Tressette.cpp
-    src/main_tressette.cpp
-)
-
-target_link_libraries(tressette PRIVATE card_core)
-
-# =========================
-# Briscola executable
-# =========================
-add_executable(briscola
+add_executable(tournament
     src/Briscola.cpp
-    src/main_briscola.cpp
+    src/Tressette.cpp
+    src/main.cpp
 )
 
-target_link_libraries(briscola PRIVATE card_core)
+target_link_libraries(tournament PRIVATE card_core)
+

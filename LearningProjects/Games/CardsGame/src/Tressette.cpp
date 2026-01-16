@@ -1,9 +1,7 @@
 #include "../inc/Tressette.h"
-#include <cstdint>
-#include <tuple>
 
-Tressette::Tressette(NumPlayers _numPlayers) :
-    CardsGame(_numPlayers)
+Tressette::Tressette(Game::Players& _players) :
+    CardsGame(_players)
 {
     gameType = TressetteGame;
     handSize = numPlayers;
@@ -16,13 +14,13 @@ int8_t Tressette::Game()
 
     dealCards(10 * numPlayers);
 
-    while(deck.getDeck().cards.size() > 0)
+    while(deck.getDeck().size() > 0)
     {
         playRound();
         dealCards(numPlayers);
     }
 
-    while(gameState.roundNumber < 40 / (numPlayers))
+    while(currRound.roundNumber < 40 / (numPlayers))
         playRound();
 
     return winner;
@@ -36,47 +34,47 @@ void Tressette::setColorConstraint(Color color)
 void Tressette::playRound()
 {
     InitRound();
-    Hand playedHand;
+    CardSet playedHand;
     firstCardPlayedInRoundColor = InvalidColor;
-    for(int i = nextToPlayIndex; i < nextToPlayIndex + numPlayers; i++)
+    for(int i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + numPlayers; i++)
     {
-        if(gameState.roundNumber == 1)
+        if(currRound.roundNumber == 1)
         {
-            int pts = AcussoCheck(std::get<0>(gameState.players[i%numPlayers]));
-            std::get<1>(gameState.players[i%numPlayers]) += pts;
+            int pts = AcussoCheck(players[i%numPlayers].playerPtr);
+            players[i%numPlayers].points += pts;
             LOG_DEBUG("Acusso pts: ", pts);
         }
         setColorConstraint(firstCardPlayedInRoundColor);
-        Card playedCard = std::get<0>(gameState.players[i%numPlayers])->PlayCard(playedHand);
+        Card playedCard = players[i%numPlayers].playerPtr->PlayCard(playedHand);
         if(firstCardPlayedInRoundColor == InvalidColor)
         {
             firstCardPlayedInRoundColor = Cards::getColor(playedCard);
         }
         LOG_INFO("Player ", i%numPlayers + 1, " played: ", Cards::CardToString(playedCard));
-        playedHand.cards.push_back(playedCard);
+        playedHand.push_back(playedCard);
         informPlayers(playedCard, i % numPlayers);
     }
 
     Card roundWinner;
-    int8_t winnerPos = (HandWinner(playedHand, roundWinner) + nextToPlayIndex) % numPlayers;
+    int8_t winnerPos = (HandWinner(playedHand, roundWinner) + currRound.nextToPlayIndex) % numPlayers;
     informPlayers(playedHand, roundWinner, winnerPos);
 
-    nextToPlayIndex = winnerPos;
+    currRound.nextToPlayIndex = winnerPos;
 
-    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerPos + 1, "player points: ", std::get<1>(gameState.players[winnerPos]));
+    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerPos + 1, "player points: ", players[winnerPos].points);
 }
 
 void Tressette::printGameState()
 {
     printLines();
-    printGameStateDefault();
+    CardsGame::printGameState();
     print("First color in round: ");
     print(Cards::ColorToString(firstCardPlayedInRoundColor));
     newLine();
     print("Round number: ");
-    print(gameState.roundNumber);
+    print(currRound.roundNumber);
     newLine();
-    for(int i = 0; i < gameState.players.size(); i++)
+    for(int i = 0; i < players.size(); i++)
     {
         print("Player ");
         print(i + 1);
@@ -129,7 +127,7 @@ Card Tressette::StrongerCard(Card card1, Card card2)
 {
     if(Cards::getColor(card1) == Cards::getColor(card2))
     {
-        if(numberStrength(Cards::getNumber(card1)) > numberStrength(Cards::getNumber(card2)))
+        if(getNumberStrength(Cards::getNumber(card1)) > getNumberStrength(Cards::getNumber(card2)))
         {
             return card1;
         }
@@ -144,7 +142,7 @@ Card Tressette::StrongerCard(Card card1, Card card2)
     }
 }
 
-int8_t Tressette::numberStrength(Number number) const
+int8_t Tressette::getNumberStrength(Number number) const
 {
     switch (number) {
         case Tre:     return 10;
@@ -161,7 +159,7 @@ int8_t Tressette::numberStrength(Number number) const
     }
 }
 
-Points Tressette::numberValue(Number number)
+Points Tressette::getNumberValue(Number number)
 {
     switch (number) {
         case Asso:     return Points(1, 0);
@@ -190,14 +188,14 @@ int Tressette::AcussoCheck(PlayerBase* player)
     return points;
 }
 
-void Tressette::Acusso(Hand hand, int& points, std::vector<AcussoType>& Acussos)
+void Tressette::Acusso(CardSet hand, int& points, std::vector<AcussoType>& Acussos)
 {
     points = 0;
     points += Napolitana(hand, Acussos);
     points += SameNumberAcusso(hand, Acussos);
 }
 
-int Tressette::SameNumberAcusso(Hand hand, std::vector<AcussoType>& Acussos)
+int Tressette::SameNumberAcusso(CardSet hand, std::vector<AcussoType>& Acussos)
 {
     int pts = 0;
     for(int n = Asso; n <= Tre; n++)
@@ -206,7 +204,7 @@ int Tressette::SameNumberAcusso(Hand hand, std::vector<AcussoType>& Acussos)
         bool flag = true;
         for(int c = Spade; c <= Bastoni; c++)
         {
-            if(!Cards::isCardInHand(hand, Cards::makeCard(static_cast<Color>(c), static_cast<Number>(n))))
+            if(!Cards::isCardInCardSet(hand, Cards::makeCard(static_cast<Color>(c), static_cast<Number>(n))))
             {
                 if(senza == InvalidColor)
                 {
@@ -306,37 +304,37 @@ int Tressette::SameNumberAcusso(Hand hand, std::vector<AcussoType>& Acussos)
     return pts;
 }
 
-int Tressette::Napolitana(Hand hand, std::vector<AcussoType>& Acussos)
+int Tressette::Napolitana(CardSet hand, std::vector<AcussoType>& Acussos)
 {
     int pts = 0;
-    if(hand.cards.size() < 3)
+    if(hand.size() < 3)
     {
         return pts;
     }
-    if(Cards::isCardInHand(hand, Cards::makeCard(Spade, Asso)) &&
-       Cards::isCardInHand(hand, Cards::makeCard(Spade, Due)) &&
-       Cards::isCardInHand(hand, Cards::makeCard(Spade, Tre)))
+    if(Cards::isCardInCardSet(hand, Cards::makeCard(Spade, Asso)) &&
+       Cards::isCardInCardSet(hand, Cards::makeCard(Spade, Due)) &&
+       Cards::isCardInCardSet(hand, Cards::makeCard(Spade, Tre)))
     {
         Acussos.push_back(NapolitanaSpade);
         pts += 3;
     }
-    if(Cards::isCardInHand(hand, Cards::makeCard(Denari, Asso)) &&
-       Cards::isCardInHand(hand, Cards::makeCard(Denari, Due)) &&
-       Cards::isCardInHand(hand, Cards::makeCard(Denari, Tre)))
+    if(Cards::isCardInCardSet(hand, Cards::makeCard(Denari, Asso)) &&
+       Cards::isCardInCardSet(hand, Cards::makeCard(Denari, Due)) &&
+       Cards::isCardInCardSet(hand, Cards::makeCard(Denari, Tre)))
     {
         Acussos.push_back(NapolitanaDenari);
         pts += 3;
     }
-    if(Cards::isCardInHand(hand, Cards::makeCard(Bastoni, Asso)) &&
-       Cards::isCardInHand(hand, Cards::makeCard(Bastoni, Due)) &&
-       Cards::isCardInHand(hand, Cards::makeCard(Bastoni, Tre)))
+    if(Cards::isCardInCardSet(hand, Cards::makeCard(Bastoni, Asso)) &&
+       Cards::isCardInCardSet(hand, Cards::makeCard(Bastoni, Due)) &&
+       Cards::isCardInCardSet(hand, Cards::makeCard(Bastoni, Tre)))
     {
         Acussos.push_back(NapolitanaBastoni);
         pts += 3;
     }
-    if(Cards::isCardInHand(hand, Cards::makeCard(Coppe, Asso)) &&
-       Cards::isCardInHand(hand, Cards::makeCard(Coppe, Due)) &&
-       Cards::isCardInHand(hand, Cards::makeCard(Coppe, Tre)))
+    if(Cards::isCardInCardSet(hand, Cards::makeCard(Coppe, Asso)) &&
+       Cards::isCardInCardSet(hand, Cards::makeCard(Coppe, Due)) &&
+       Cards::isCardInCardSet(hand, Cards::makeCard(Coppe, Tre)))
     {
         Acussos.push_back(NapolitanaCoppe);
         pts += 3;
@@ -344,14 +342,14 @@ int Tressette::Napolitana(Hand hand, std::vector<AcussoType>& Acussos)
     return pts;
 }
 
-bool Tressette::checkConstraints(const Hand& hand, Card card)
+bool Tressette::checkConstraints(const CardSet& hand, Card card)
 {
     if(moveConstraints.colorToPlay != InvalidColor && Cards::getColor(card) != moveConstraints.colorToPlay)
     {
         for(int i = Asso; i <= Re; i++)
         {
             Card _card = std::make_tuple(moveConstraints.colorToPlay, static_cast<Number>(i));
-            if(Cards::isCardInHand(hand, _card))
+            if(Cards::isCardInCardSet(hand, _card))
             {
                 LOG_DEBUG("Constraint not met: played card: ");
                 Cards::logCard(card);
@@ -368,10 +366,13 @@ bool Tressette::checkConstraints(const Hand& hand, Card card)
 
 void Tressette::InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards)
 {
-    for(auto& p : gameState.players)
+    for(auto& p : players)
     {
-        PlayerBase* ptr = std::get<0>(p);
-
-        ptr->dealtCards(dealtCards);
+        p.playerPtr->dealtCards(dealtCards);
     }
+}
+
+std::shared_ptr<CardsGame> Tressette::createGame(Game::Players& players)
+{
+    return std::make_unique<Tressette>(players);
 }
