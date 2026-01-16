@@ -18,7 +18,7 @@ void print(T data)
 
 void print(int8_t data);
 void print(uint8_t data);
-void print(Points p);
+void print(const Points p);
 
 void newLine();
 void printLines();

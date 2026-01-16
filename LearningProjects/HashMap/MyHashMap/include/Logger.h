@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "../../../Games/CardsGame/inc/Points.h"
+
 #define MAX_NUM_LOGS_IN_ROTATION 9
 
 #define DEBUG 1
