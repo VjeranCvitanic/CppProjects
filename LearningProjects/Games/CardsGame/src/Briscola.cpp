@@ -1,8 +1,8 @@
 #include "../inc/Briscola.h"
 #include <cstdint>
 
-Briscola::Briscola(Game::Players& _players) :
-    CardsGame(_players)
+Briscola::Briscola(Game::Teams& _teams) :
+    CardsGame(_teams)
 {
     lastCard = getCard(0);
     strongColor = Cards::getColor(lastCard);
@@ -124,7 +124,7 @@ Card Briscola::getLastCard() const
     return lastCard;
 }
 
-std::shared_ptr<CardsGame> Briscola::createGame(Game::Players& players)
+std::shared_ptr<CardsGame> Briscola::createGame(Game::Teams& players)
 {
     return std::make_unique<Briscola>(players);
 }

@@ -29,10 +29,22 @@ namespace Game
         PlayerState(PlayerBase*);
 
         PlayerBase* playerPtr;
-        Points points = 0;
         Deck playerHand;
     };
     typedef std::vector<PlayerState> Players;
+
+    class TeamState
+    {
+    public:
+        TeamState(const Game::Players& p, int _teamId) :
+            players(p), teamId(_teamId)
+        {}
+
+        Points points = 0;
+        int teamId;
+        Players players;
+    };
+    typedef std::vector<TeamState> Teams;
 }
 
 struct Round
@@ -49,7 +61,7 @@ public:
     Card getCard(int8_t pos);
     virtual Card getLastCard() const;
 
-    Game::Players players;
+    Game::Teams teams;
 
     NumPlayers numPlayers;
     int handSize = 0;

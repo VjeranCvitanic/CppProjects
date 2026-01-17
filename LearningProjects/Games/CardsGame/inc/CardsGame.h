@@ -9,7 +9,7 @@ class CardsGame : public GameRules, protected GameState
     friend class HumanPlayer;
     friend class Bot;
 public:
-    CardsGame(Game::Players&);
+    CardsGame(Game::Teams&);
     virtual ~CardsGame() = default;
 
     virtual int8_t Game();
@@ -18,7 +18,7 @@ public:
     void logDeck();
     virtual void printGameState();
 
-    virtual std::shared_ptr<CardsGame> createGame(Game::Players& players) = 0;
+    virtual std::shared_ptr<CardsGame> createGame(Game::Teams& players) = 0;
 
     GameType gameType = InvalidGameType;
 

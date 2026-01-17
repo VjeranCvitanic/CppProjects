@@ -23,7 +23,7 @@ namespace Match
     class TeamState
     {
     public:
-        TeamState(Match::Players p);
+        TeamState(Match::Players& p, int _teamId);
 
         Score score;
         int teamId;
@@ -31,19 +31,21 @@ namespace Match
     };
     typedef std::vector<TeamState> Teams;
 }
+
+Game::Players makeGamePlayers(const Match::Players& matchPlayers);
+
 class CardsMatch
 {
 public:
     using GameFactory =
-        std::function<std::shared_ptr<CardsGame>(Game::Players&)>;
+        std::function<std::shared_ptr<CardsGame>(Game::Teams&)>;
 
-    CardsMatch(Match::Players& players, GameFactory factory);
+    CardsMatch(Match::Teams& players, GameFactory factory);
     void startMatch(int& winTeamId);
 private:
     bool isMatchOver(int& winTeamId);
 
     GameFactory factory;
-    Match::Players players;
     Match::Teams teams;
     std::shared_ptr<CardsGame> gamePtr;
     int gameCnt = 0;

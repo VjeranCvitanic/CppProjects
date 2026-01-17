@@ -48,7 +48,7 @@ struct MoveConstraints
 class Tressette : public CardsGame
 {
 public:
-    Tressette(Game::Players&);
+    Tressette(Game::Teams&);
 
     int8_t Game() override;
 
@@ -56,7 +56,7 @@ public:
     int8_t getNumberStrength(Number number) const override;
     void printGameState() override;
 
-    std::shared_ptr<CardsGame> createGame(Game::Players& players) override;
+    std::shared_ptr<CardsGame> createGame(Game::Teams& teams) override;
 
 protected:
     bool checkConstraints(const CardSet& hand, Card card) override;

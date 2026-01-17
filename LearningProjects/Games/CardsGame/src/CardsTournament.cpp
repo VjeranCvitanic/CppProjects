@@ -20,7 +20,7 @@ void CardsTournament::initPlayers(Tournament::Players _players)
     std::default_random_engine rng(rd());
     std::shuffle(players.begin(), players.end(), rng);
 
-    int i = 1;
+    int i = 0;
     for(auto& p : players)
     {
         p.playerPtr->setPlayerId(i);
@@ -72,13 +72,20 @@ Tournament::PlayerState::PlayerState(PlayerBase* ptr, int _playerID)
 
 void CardsTournament::start()
 {
-    Match::Players playersMatch;
-    for (auto& p : players)
-        playersMatch.emplace_back(p.playerPtr);
+    Match::Teams teamsMatch;
+    for(auto& t : teams)
+    {
+        Match::Players playersMatch;
+        for(auto& p : t.players)
+        {
+            playersMatch.emplace_back(p.playerPtr);
+        }
+        teamsMatch.emplace_back(playersMatch, t.teamId);
+    }
 
     CardsMatch briscola(
-        playersMatch,
-        [](Game::Players& p) {
+        teamsMatch,
+        [](Game::Teams& p) {
             return std::make_unique<Briscola>(p);
         }
     );
@@ -87,8 +94,8 @@ void CardsTournament::start()
     teams[winTeamId].wins++;
 
     CardsMatch tressette(
-        playersMatch,
-        [](Game::Players& p) {
+        teamsMatch,
+        [](Game::Teams& p) {
             return std::make_unique<Tressette>(p);
         }
     );
@@ -98,8 +105,8 @@ void CardsTournament::start()
     if(!isTournamentOver())
     {
         CardsMatch briscola2(
-            playersMatch,
-            [](Game::Players& p) {
+            teamsMatch,
+            [](Game::Teams& p) {
                 return std::make_unique<Briscola>(p);
             }
         );

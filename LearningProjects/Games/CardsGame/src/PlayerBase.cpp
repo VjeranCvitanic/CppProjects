@@ -34,8 +34,7 @@ void PlayerBase::setRoundEnd(bool winner, Points roundValue)
 
     if(winner)
     {
-        myPoints += roundValue;
-        LOG_DEBUG("My points: ", myPoints);
+        LOG_DEBUG("My team's points: ", gamePtr->teams[teamId].points);
     }
 }
 

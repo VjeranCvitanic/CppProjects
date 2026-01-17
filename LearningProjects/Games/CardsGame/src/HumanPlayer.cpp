@@ -125,7 +125,7 @@ void HumanPlayer::updateLastPlayedCard(Card playedCard, int playerId)
 {
     PlayerBase::updateLastPlayedCard(playedCard, playerId);
     print("\t\tPlayer ");
-    print(playerId + 1);
+    print(playerId);
     print(" -> Card played: ");
     print(Cards::CardToString(playedCard));
     newLine();
@@ -151,7 +151,6 @@ void HumanPlayer::startGame()
     newLine();
     if(!gamePtr)
         LOG_ERROR("gamePtr is nullptr");
-    LOG_DEBUG(gamePtr);
     gamePtr->printGameState();
     printLines();
 }

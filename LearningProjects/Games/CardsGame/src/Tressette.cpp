@@ -1,6 +1,6 @@
 #include "../inc/Tressette.h"
 
-Tressette::Tressette(Game::Players& _players) :
+Tressette::Tressette(Game::Teams& _players) :
     CardsGame(_players)
 {
     gameType = TressetteGame;
@@ -38,19 +38,20 @@ void Tressette::playRound()
     firstCardPlayedInRoundColor = InvalidColor;
     for(int i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + numPlayers; i++)
     {
+        PlayerBase* playerPtr = teams[i/2].players[i%numPlayers/2].playerPtr;
         if(currRound.roundNumber == 1)
         {
-            int pts = AcussoCheck(players[i%numPlayers].playerPtr);
-            players[i%numPlayers].points += pts;
+            int pts = AcussoCheck(playerPtr);
+            teams[i/2].points += pts;
             LOG_DEBUG("Acusso pts: ", pts);
         }
         setColorConstraint(firstCardPlayedInRoundColor);
-        Card playedCard = players[i%numPlayers].playerPtr->PlayCard(playedHand);
+        Card playedCard = playerPtr->PlayCard(playedHand);
         if(firstCardPlayedInRoundColor == InvalidColor)
         {
             firstCardPlayedInRoundColor = Cards::getColor(playedCard);
         }
-        LOG_INFO("Player ", i%numPlayers + 1, " played: ", Cards::CardToString(playedCard));
+        LOG_INFO("Player ", i%numPlayers, " played: ", Cards::CardToString(playedCard));
         playedHand.push_back(playedCard);
         informPlayers(playedCard, i % numPlayers);
     }
@@ -61,7 +62,7 @@ void Tressette::playRound()
 
     currRound.nextToPlayIndex = winnerPos;
 
-    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerPos + 1, "player points: ", players[winnerPos].points);
+    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerPos, "player points: ", teams[winnerPos].points);
 }
 
 void Tressette::printGameState()
@@ -74,14 +75,17 @@ void Tressette::printGameState()
     print("Round number: ");
     print(currRound.roundNumber);
     newLine();
-    for(int i = 0; i < players.size(); i++)
+    for(auto& t : teams)
     {
-        print("Player ");
-        print(i + 1);
-        print(" acussos: ");
-        if(!Acussos.empty())
-            printAcussos(std::get<1>(Acussos[i]));
-        print("\n");
+        for(auto& p : t.players)
+        {
+            print("Player ");
+            print(p.playerPtr->getPlayerId());
+            print(" acussos: ");
+            if(!Acussos.empty())
+                printAcussos(std::get<1>(Acussos[p.playerPtr->getPlayerId()]));
+            print("\n");
+        }
     }
     printLines();
 }
@@ -366,13 +370,16 @@ bool Tressette::checkConstraints(const CardSet& hand, Card card)
 
 void Tressette::InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards)
 {
-    for(auto& p : players)
+    for(auto& t : teams)
     {
-        p.playerPtr->dealtCards(dealtCards);
+        for(auto& p : t.players)
+        {
+            p.playerPtr->dealtCards(dealtCards);
+        }
     }
 }
 
-std::shared_ptr<CardsGame> Tressette::createGame(Game::Players& players)
+std::shared_ptr<CardsGame> Tressette::createGame(Game::Teams& players)
 {
     return std::make_unique<Tressette>(players);
 }
