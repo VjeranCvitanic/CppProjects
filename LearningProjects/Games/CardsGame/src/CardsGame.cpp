@@ -10,7 +10,7 @@ CardsGame::CardsGame(Game::Teams& _teams) :
     LOG_DEBUG("numPlayers: ", numPlayers);
 }
 
-int8_t CardsGame::Game()
+void CardsGame::Game(GameResult& gameResult)
 {
     LOG_DEBUG("Start game");
     for(auto& t : teams)
@@ -21,7 +21,11 @@ int8_t CardsGame::Game()
             p.playerPtr->startGame();
         }
     }
-    return 0;
+}
+
+GameState::GameState()
+{
+    deck = Deck(true);
 }
 
 Game::PlayerState::PlayerState(PlayerBase* ptr) : 
@@ -42,7 +46,7 @@ void CardsGame::logDeck()
     deck.logDeck();
 }
 
-void CardsGame::informPlayers(CardSet playedHand, Card roundWinner, int8_t winnerPos)
+void CardsGame::informPlayers(CardSet playedHand, Card roundWinner, PlayerId winnerId)
 {
     Points roundValue = calculateRoundValue(playedHand);
     totalPoints += roundValue;
@@ -50,7 +54,7 @@ void CardsGame::informPlayers(CardSet playedHand, Card roundWinner, int8_t winne
     for(int i = 0; i < teams.size(); i++)
     {
         bool w = false;
-        if(teams[i].teamId == winnerPos)
+        if(teams[i].teamId == winnerId)
         {
             teams[i].points += roundValue;
             w = true;
@@ -63,7 +67,7 @@ void CardsGame::informPlayers(CardSet playedHand, Card roundWinner, int8_t winne
     }
 }
 
-void CardsGame::informPlayers(Card playedCard, int playerId)
+void CardsGame::informPlayers(Card playedCard, PlayerId playerId)
 {
     for(auto& t : teams)
     {
@@ -94,13 +98,16 @@ void CardsGame::dealCards(int8_t numCards)
 
     for(int i = 0; i < numCards; i++)
     {
+        Card card = drawnCards[i];
         LOG_DEBUG("Dealing...");
-        int index = (i + currRound.nextToPlayIndex);
+        PlayerId index = (i + currRound.nextToPlayIndex);
         auto& team = teams[index % 2];
         LOG_DEBUG("Team: ", team.teamId, " size: ", team.players.size(), "index: ", index, "pos: ", (index % (numPlayers/2)));
-        auto& player = team.players[index % team.players.size()].playerPtr;
-        player->ReceiveCard(drawnCards[i]);
-        dealtCards.push_back(std::make_tuple(player, drawnCards[i]));
+        auto& player = team.players[index % team.players.size()];
+        player.playerPtr->ReceiveCard(card);
+        player.playerHand.AddCard(card);
+        
+        dealtCards.push_back(std::make_tuple(player.playerPtr, card));
     }
 
     if(currRound.roundNumber > 0)
@@ -187,7 +194,7 @@ void CardsGame::logStartRound()
     {
         for(auto& p : t.players)
         {
-            LOG_DEBUG("Player ", +p.playerPtr->getPlayerId(), " hand: ");
+            LOG_DEBUG("Player ", p.playerPtr->getPlayerId(), " hand: ");
             p.playerHand.logDeck();
             LOG_DEBUG("Next to play: ", currRound.nextToPlayIndex);
         }
@@ -216,27 +223,30 @@ void CardsGame::playRound()
 {
     InitRound();
     CardSet playedHand;
-    for(int i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + handSize; i++)
+    for(PlayerId i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + handSize; i++)
     {
         Card playedCard;
 
         Game::PlayerState* playerStatePtr = &teams[i%2].players[i%numPlayers/2];
         do {
+            LOG_DEBUG("Before playing: Player", playerStatePtr->playerPtr->getPlayerId(), "hand"), playerStatePtr->playerHand.logDeck();
             playedCard = playerStatePtr->playerPtr->PlayCard(playedHand);
-        }while (!checkConstraints(playerStatePtr->playerHand.cards, playedCard));
+        }while (!checkConstraints(playerStatePtr->playerHand.getDeck(), playedCard));
 
-        LOG_INFO("Player ", i%numPlayers, " played: ", Cards::CardToString(playedCard));
+        playerStatePtr->playerHand.eraseCard(playedCard);
+        playerStatePtr->playerPtr->eraseCard(playedCard);
+        LOG_INFO("Player ", playerStatePtr->playerPtr->getPlayerId(), " played: ", Cards::CardToString(playedCard));
         playedHand.push_back(playedCard);
         informPlayers(playedCard, i % numPlayers);
     }
 
     Card roundWinner;
-    int8_t winnerPos = (HandWinner(playedHand, roundWinner) + currRound.nextToPlayIndex) % numPlayers;
-    informPlayers(playedHand, roundWinner, winnerPos);
+    PlayerId winnerId = (HandWinner(playedHand, roundWinner) + currRound.nextToPlayIndex) % numPlayers;
+    informPlayers(playedHand, roundWinner, winnerId);
 
-    currRound.nextToPlayIndex = winnerPos;
+    currRound.nextToPlayIndex = winnerId;
 
-    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerPos, "player points: ", teams[winnerPos].points);
+    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerId, "player points: ", teams[winnerId].points);
 }
 
 Card GameState::getLastCard() const

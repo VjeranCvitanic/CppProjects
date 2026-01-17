@@ -45,17 +45,11 @@ typedef std::vector<Card> CardSet;
 class Deck
 {
 public:
-    friend class GameState;
-    friend class CardsGame;
-    friend class PlayerBase;
-    friend class HumanPlayer;
-    friend class Bot;
     Deck();
     Deck(bool full);
 
     CardSet getDeck() const;
 
-protected:
     //getters
     Card getCard(int8_t pos);
     bool isCardInDeck(Card card);
@@ -66,6 +60,9 @@ protected:
     Card popCard();
     void Sort(CardsGame* gamePtr);
     void eraseCard(Card card);
+    void eraseDeck();
+
+    Card getRandomCard();
 
     // print & log
     void logDeck();

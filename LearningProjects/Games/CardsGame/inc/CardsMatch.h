@@ -2,8 +2,7 @@
 
 #include "CardsGame.h"
 #include "GameState.h"
-#include "Tressette.h"
-#include "Briscola.h"
+
 #include <functional>
 #include <memory>
 
@@ -23,10 +22,10 @@ namespace Match
     class TeamState
     {
     public:
-        TeamState(Match::Players& p, int _teamId);
+        TeamState(Match::Players& p, TeamId _teamId);
 
         Score score;
-        int teamId;
+        TeamId teamId;
         Players players;
     };
     typedef std::vector<TeamState> Teams;
@@ -41,9 +40,9 @@ public:
         std::function<std::shared_ptr<CardsGame>(Game::Teams&)>;
 
     CardsMatch(Match::Teams& players, GameFactory factory);
-    void startMatch(int& winTeamId);
+    void startMatch(TeamId& winTeamId);
 private:
-    bool isMatchOver(int& winTeamId);
+    bool isMatchOver(TeamId& winTeamId);
 
     GameFactory factory;
     Match::Teams teams;

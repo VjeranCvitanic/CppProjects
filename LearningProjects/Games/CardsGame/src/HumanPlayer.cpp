@@ -4,7 +4,7 @@
 #include <tuple>
 #include <vector>
 
-Card HumanPlayer::PlayCard(CardSet playedHand)
+Card HumanPlayer::PlayCard(const CardSet& playedHand)
 {
     if(hand.getDeck().empty())
     {
@@ -13,7 +13,6 @@ Card HumanPlayer::PlayCard(CardSet playedHand)
     }
 
     Card playedCard = parseInput();
-    hand.eraseCard(playedCard);
     return playedCard;
 }
 
@@ -121,7 +120,7 @@ ReturnVal HumanPlayer::parse(std::string input, Card& card)
 }
 
 
-void HumanPlayer::updateLastPlayedCard(Card playedCard, int playerId)
+void HumanPlayer::updateLastPlayedCard(Card playedCard, PlayerId playerId)
 {
     PlayerBase::updateLastPlayedCard(playedCard, playerId);
     print("\t\tPlayer ");

@@ -2,6 +2,7 @@
 
 #include "Cards.h"
 #include "CardsGame.h"
+#include "GameRules.h"
 #include "GameState.h"
 #include "PlayerBase.h"
  
@@ -12,14 +13,12 @@ class Briscola : public CardsGame
 public:
     Briscola(Game::Teams&);
 
-    int8_t Game() override;
+    void Game(GameResult&) override;
 
     // getters
     int8_t getNumberStrength(Number number) const override;
     Card getLastCard() const override;
     void printGameState() override;
-
-    std::shared_ptr<CardsGame> createGame(Game::Teams& players) override;
 
 protected:
     Color strongColor;

@@ -7,10 +7,9 @@ Tressette::Tressette(Game::Teams& _players) :
     handSize = numPlayers;
 }
 
-int8_t Tressette::Game()
+void Tressette::Game(GameResult& gameResult)
 {
-    CardsGame::Game();
-    int8_t winner = 0;
+    CardsGame::Game(gameResult);
 
     dealCards(10 * numPlayers);
 
@@ -23,7 +22,13 @@ int8_t Tressette::Game()
     while(currRound.roundNumber < 40 / (numPlayers))
         playRound();
 
-    return winner;
+    teams[currRound.nextToPlayIndex%2].points += 1; // last round win in tressete temp impl TODO
+
+    gameResult.winTeamId = -1;
+    for(auto& t : teams)
+    {
+        gameResult.teamPoints[t.teamId] += t.points;
+    }
 }
 
 void Tressette::setColorConstraint(Color color)
@@ -35,18 +40,30 @@ void Tressette::playRound()
 {
     InitRound();
     CardSet playedHand;
+
     firstCardPlayedInRoundColor = InvalidColor;
-    for(int i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + numPlayers; i++)
+    for(PlayerId i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + handSize; i++)
     {
-        PlayerBase* playerPtr = teams[i/2].players[i%numPlayers/2].playerPtr;
+        Card playedCard;
+        auto& team = teams[i%2];
+        auto& playerStatePtr = team.players[i%numPlayers/2];
         if(currRound.roundNumber == 1)
         {
-            int pts = AcussoCheck(playerPtr);
-            teams[i/2].points += pts;
+            int pts = AcussoCheck(playerStatePtr.playerPtr);
+            team.points += pts;
             LOG_DEBUG("Acusso pts: ", pts);
         }
         setColorConstraint(firstCardPlayedInRoundColor);
-        Card playedCard = playerPtr->PlayCard(playedHand);
+        do {
+            LOG_DEBUG("Before playing: Player", i, "hand"), playerStatePtr.playerHand.logDeck();
+            playedCard = playerStatePtr.playerPtr->PlayCard(playedHand);
+
+        }while (!checkConstraints(playerStatePtr.playerHand.getDeck(), playedCard));
+
+        playerStatePtr.playerPtr->eraseCard(playedCard);
+
+        playerStatePtr.playerHand.eraseCard(playedCard);
+
         if(firstCardPlayedInRoundColor == InvalidColor)
         {
             firstCardPlayedInRoundColor = Cards::getColor(playedCard);
@@ -57,12 +74,12 @@ void Tressette::playRound()
     }
 
     Card roundWinner;
-    int8_t winnerPos = (HandWinner(playedHand, roundWinner) + currRound.nextToPlayIndex) % numPlayers;
-    informPlayers(playedHand, roundWinner, winnerPos);
+    PlayerId winnerId = (HandWinner(playedHand, roundWinner) + currRound.nextToPlayIndex) % numPlayers;
+    informPlayers(playedHand, roundWinner, winnerId);
 
-    currRound.nextToPlayIndex = winnerPos;
+    currRound.nextToPlayIndex = winnerId;
 
-    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerPos, "player points: ", teams[winnerPos].points);
+    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerId, "player points: ", teams[winnerId].points);
 }
 
 void Tressette::printGameState()
@@ -83,7 +100,7 @@ void Tressette::printGameState()
             print(p.playerPtr->getPlayerId());
             print(" acussos: ");
             if(!Acussos.empty())
-                printAcussos(std::get<1>(Acussos[p.playerPtr->getPlayerId()]));
+                printAcussos(Acussos.at(p.playerPtr->getPlayerId()));
             print("\n");
         }
     }
@@ -187,7 +204,7 @@ int Tressette::AcussoCheck(PlayerBase* player)
     {
         LOG_DEBUG("\tAcusso: ", a);
     }
-    Acussos.push_back(std::make_tuple(player, accussos));
+    Acussos.insert({player->getPlayerId(), accussos});
 
     return points;
 }
@@ -377,9 +394,4 @@ void Tressette::InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dea
             p.playerPtr->dealtCards(dealtCards);
         }
     }
-}
-
-std::shared_ptr<CardsGame> Tressette::createGame(Game::Teams& players)
-{
-    return std::make_unique<Tressette>(players);
 }

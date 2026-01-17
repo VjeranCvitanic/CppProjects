@@ -33,4 +33,3 @@ client:
 TODO:
 	busso, striscio, izlaz
 	grpc, proto
-	states have id, not pointer, only registry has pointer

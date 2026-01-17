@@ -6,6 +6,7 @@
 #include "PlayerBase.h"
 #include <cstdint>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 enum AcussoType
@@ -50,19 +51,17 @@ class Tressette : public CardsGame
 public:
     Tressette(Game::Teams&);
 
-    int8_t Game() override;
+    void Game(GameResult&) override;
 
     // getters
     int8_t getNumberStrength(Number number) const override;
     void printGameState() override;
 
-    std::shared_ptr<CardsGame> createGame(Game::Teams& teams) override;
-
 protected:
     bool checkConstraints(const CardSet& hand, Card card) override;
 
 private:
-    std::vector<std::tuple<PlayerBase*, std::vector<AcussoType>>> Acussos = {};
+    std::unordered_map<PlayerId, std::vector<AcussoType>> Acussos = {};
     Color firstCardPlayedInRoundColor = InvalidColor;
     MoveConstraints moveConstraints;
     

@@ -14,10 +14,9 @@ Briscola::Briscola(Game::Teams& _teams) :
     gameType = BriscolaGame;
 }
 
-int8_t Briscola::Game()
+void Briscola::Game(GameResult& gameResult)
 {
-    CardsGame::Game();
-    int8_t winner = 0;
+    CardsGame::Game(gameResult);
 
     dealCards(2 * numPlayers);
 
@@ -31,7 +30,12 @@ int8_t Briscola::Game()
     while(currRound.roundNumber < 10)
         playRound();
 
-    return winner;
+    gameResult.winTeamId = -1;
+    for(auto& t : teams)
+    {
+        if(t.points.punta > 60)
+            gameResult.winTeamId = t.teamId;
+    }
 }
 
 Card Briscola::StrongerCard(Card card1, Card card2)
@@ -122,9 +126,4 @@ Color Briscola::getStrongColor() const
 Card Briscola::getLastCard() const
 {
     return lastCard;
-}
-
-std::shared_ptr<CardsGame> Briscola::createGame(Game::Teams& players)
-{
-    return std::make_unique<Briscola>(players);
 }

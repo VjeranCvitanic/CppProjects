@@ -20,11 +20,11 @@ Game::Players makeGamePlayers(const Match::Players& matchPlayers)
     return result;
 }
 
-Match::TeamState::TeamState(Match::Players& p, int _teamId) :
+Match::TeamState::TeamState(Match::Players& p, TeamId _teamId) :
     players(p), teamId(_teamId)
 {}
 
-void CardsMatch::startMatch(int& winTeamId)
+void CardsMatch::startMatch(TeamId& winTeamId)
 {
     LOG_INFO("Match starting");
     Game::Teams teamsGame;
@@ -36,27 +36,44 @@ void CardsMatch::startMatch(int& winTeamId)
             makeGamePlayers(t.players), t.teamId
         );
     }
-
-    LOG_DEBUG("Create factory ptr");
-
-    gamePtr = factory(teamsGame);
-
-    LOG_DEBUG("Factory created");
     
-    while(isMatchOver(winTeamId) == false)
+    do
     {
         LOG_DEBUG("Creating game");
-        gamePtr->createGame(teamsGame);
+        gamePtr = factory(teamsGame);
         LOG_INFO("Game ", ++gameCnt, " starting");
         gamePtr->logDeck();
-        int winTeamId = gamePtr->Game();
-        LOG_INFO("Winner: team ", winTeamId);
-        teams[winTeamId].score.wonGames++; // tressetta todo
+        GameResult gameResult;
+        gamePtr->Game(gameResult);
+
+        switch (gamePtr->gameType) {
+            case BriscolaGame:
+                if(gameResult.winTeamId == -1)
+                    LOG_INFO("Draw");
+                else
+                {
+                    LOG_INFO("Win teamId: ", gameResult.winTeamId);
+                    teams[gameResult.winTeamId].score.wonGames++;
+                }
+                break;
+            case TressetteGame:
+                LOG_INFO("Points: ");
+                for(auto& t : teams)
+                {
+                    LOG_INFO("teamId: ", t.teamId);
+                    t.score.points.punta += gameResult.teamPoints[t.teamId].punta;
+                }
+                break;
+            default:
+                LOG_ERROR("Unsupported game type");
+                break;
+        }
+
         gamePtr->printGameState();
-    }
+    }while(isMatchOver(winTeamId) == false);
 }
 
-bool CardsMatch::isMatchOver(int& winTeamId)
+bool CardsMatch::isMatchOver(TeamId& winTeamId)
 {
     LOG_DEBUG("gameType: ", gamePtr->gameType);
     switch(gamePtr->gameType)
@@ -74,7 +91,7 @@ bool CardsMatch::isMatchOver(int& winTeamId)
         case TressetteGame:
             for(auto &t : teams)
             {
-                if(t.score.points.punta >= 41)
+                if(t.score.points.punta >= 41) // todo izlaz
                 {
                     winTeamId = t.teamId;
                     return true;

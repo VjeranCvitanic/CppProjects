@@ -10,7 +10,6 @@ Deck::Deck(bool full)
 {
     if(full)
     {
-        srand(static_cast<unsigned int>(time(NULL)));
         CreateDeck();
     }
     else {
@@ -21,6 +20,17 @@ Deck::Deck(bool full)
 CardSet Deck::getDeck() const
 {
     return cards;
+}
+
+Card Deck::getRandomCard()
+{
+    if(cards.empty())
+    {
+        LOG_ERROR("Empty deck");
+        return Cards::makeCard(InvalidColor, InvalidNumber);
+    }
+    size_t index = std::rand() % cards.size();
+    return cards[index];
 }
 
 Card Deck::getCard(int8_t pos)
@@ -42,6 +52,7 @@ int8_t Deck::findFreeSlot(int* flags)
 
 void Deck::CreateDeck()
 {
+    LOG_DEBUG("Creating deck");
     cards.resize(DECK_SIZE);
     int flags[DECK_SIZE] = {0};
     for (int c = Spade; c < InvalidColor; c++)
@@ -67,7 +78,7 @@ void Cards::logCard(Card card)
 
 void Cards::logCards(CardSet cards)
 {
-    LOG_DEBUG("Deck:");
+    LOG_DEBUG("Cards:");
     for(int i = cards.size()-1; i >= 0; i--)
     {
         Cards::logCard(cards[i]);
@@ -128,6 +139,11 @@ void Deck::eraseCard(Card card)
 {
     auto rem = std::remove(cards.begin(), cards.end(), card);
     cards.erase(rem, cards.end());
+}
+
+void Deck::eraseDeck()
+{
+    cards.clear();
 }
 
 void Deck::AddCard(Card card)

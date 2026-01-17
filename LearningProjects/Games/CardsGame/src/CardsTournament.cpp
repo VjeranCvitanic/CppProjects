@@ -64,10 +64,9 @@ Tournament::TeamState::TeamState(Tournament::Players p)
 }
 
 Tournament::PlayerState::PlayerState(PlayerBase* ptr, int _playerID)
-   : playerPtr(ptr)
+   : playerPtr(ptr), playerExternalId(_playerID)
 {
     LOG_DEBUG("constructor");
-    playerPtr->setPlayerId(_playerID);
 }
 
 void CardsTournament::start()

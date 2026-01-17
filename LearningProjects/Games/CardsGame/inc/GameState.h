@@ -2,6 +2,11 @@
 
 #include "Cards.h"
 #include "Points.h"
+#include <unordered_map>
+#include <vector>
+
+typedef int TeamId;
+typedef int PlayerId;
 
 class PlayerBase;
 
@@ -36,12 +41,12 @@ namespace Game
     class TeamState
     {
     public:
-        TeamState(const Game::Players& p, int _teamId) :
+        TeamState(const Game::Players& p, TeamId _teamId) :
             players(p), teamId(_teamId)
         {}
 
         Points points = 0;
-        int teamId;
+        TeamId teamId;
         Players players;
     };
     typedef std::vector<TeamState> Teams;
@@ -50,13 +55,21 @@ namespace Game
 struct Round
 {
     Deck playedCardsInRound;
-    int nextToPlayIndex = 0;
+    PlayerId nextToPlayIndex = 0;
     int roundNumber = 0;
+};
+
+struct GameResult
+{
+    TeamId winTeamId;
+    std::unordered_map<TeamId, Points> teamPoints;
 };
 
 class GameState
 {
 public:
+    GameState();
+
     Deck getDeck();
     Card getCard(int8_t pos);
     virtual Card getLastCard() const;
@@ -67,7 +80,7 @@ public:
     int handSize = 0;
     Points totalPoints = 0;
 
-    Deck deck = Deck(true);
+    Deck deck;
 
     Round currRound;
 };

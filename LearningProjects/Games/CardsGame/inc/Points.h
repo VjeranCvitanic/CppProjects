@@ -10,8 +10,9 @@ public:
     Points(int p = 0, int b = 0) : punta(p), bella(b) {}
 
     Points& operator+=(const Points& other) {
-        punta += other.punta;
+        punta += other.punta + (bella + other.bella)/3;
         bella += other.bella;
+        bella %= 3;
         return *this;
     }
 };

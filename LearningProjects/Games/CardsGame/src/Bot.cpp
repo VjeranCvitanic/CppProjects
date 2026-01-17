@@ -1,6 +1,6 @@
 #include "../inc/Bot.h"
 
-Card Bot::PlayCard(CardSet playedHand)
+Card Bot::PlayCard(const CardSet&)
 {
     if(hand.getDeck().empty())
     {
@@ -8,12 +8,11 @@ Card Bot::PlayCard(CardSet playedHand)
         return Cards::makeCard(InvalidColor, InvalidNumber);
     }
 
-    Card playedCard = hand.getDeck().back();
-    hand.popCard();
+    Card playedCard = hand.getRandomCard();
     return playedCard;
 }
 
-void Bot::updateLastPlayedCard(Card playedCard, int playerId)
+void Bot::updateLastPlayedCard(Card playedCard, PlayerId playerId)
 {
     PlayerBase::updateLastPlayedCard(playedCard, playerId);
 }

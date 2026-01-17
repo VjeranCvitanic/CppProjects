@@ -2,6 +2,7 @@
 
 #include "GameRules.h"
 #include "GameState.h"
+#include <cstdint>
 
 class CardsGame : public GameRules, protected GameState
 {
@@ -12,13 +13,11 @@ public:
     CardsGame(Game::Teams&);
     virtual ~CardsGame() = default;
 
-    virtual int8_t Game();
+    virtual void Game(GameResult&);
 
     //print & log
     void logDeck();
     virtual void printGameState();
-
-    virtual std::shared_ptr<CardsGame> createGame(Game::Teams& players) = 0;
 
     GameType gameType = InvalidGameType;
 
@@ -31,8 +30,8 @@ protected:
     Points calculateRoundValue(CardSet playedHand);
 
     virtual void InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards);
-    void informPlayers(CardSet playedHand, Card roundWinner, int8_t winnerPos);
-    void informPlayers(Card playedCard, int playerId);
+    void informPlayers(CardSet playedHand, Card roundWinner, PlayerId winnerId);
+    void informPlayers(Card playedCard, PlayerId playerId);
 
 private:
     void logStartRound();

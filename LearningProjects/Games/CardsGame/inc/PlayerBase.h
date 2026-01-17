@@ -2,6 +2,7 @@
 
 #include "Cards.h"
 #include "CardsGame.h"
+#include "GameState.h"
 
 class PlayerBase
 {
@@ -10,32 +11,33 @@ public:
     virtual ~PlayerBase() = default;
 
     // callbacks
-    virtual Card PlayCard(CardSet playedHand) = 0;
+    virtual Card PlayCard(const CardSet&) = 0;
     void ReceiveCard(Card card);
     virtual void startNewRound();
     virtual void startGame();
     virtual void dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards);
 
     // getters
-    int8_t getTeammateId();
-    int8_t getPlayerId();
+    PlayerId getTeammateId();
+    PlayerId getPlayerId();
     CardSet GetHand();
 
     // setters
-    void setTeammateId(int8_t id);
-    void setTeamId(int id);
-    void setPlayerId(int8_t id);
+    void setTeammateId(PlayerId id);
+    void setTeamId(TeamId id);
+    void setPlayerId(PlayerId id);
     void setGamePtr(CardsGame* ptr);
     virtual void setRoundEnd(bool winner, Points roundValue);
-    virtual void updateLastPlayedCard(Card playedCard, int playerId);
+    virtual void updateLastPlayedCard(Card playedCard, PlayerId playerId);
+    void eraseCard(Card playedCard);
 
 protected:
     Deck hand;
     Points totalPoints = 0;
     Points myPoints = 0;
-    int8_t playerId = 0;
-    int8_t teammateId = -1;
-    int teamId = -1;
+    PlayerId playerId = 0;
+    PlayerId teammateId = -1;
+    TeamId teamId = -1;
 
     CardsGame* gamePtr;
     Round round;

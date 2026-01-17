@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CardsMatch.h"
+#include "GameState.h"
 #include "Tressette.h"
 #include "Briscola.h"
 
@@ -11,10 +12,10 @@ namespace Tournament
     struct PlayerState
     {
     public:
-        PlayerState(PlayerBase*, int);
+        PlayerState(PlayerBase*, PlayerId);
 
         PlayerBase* playerPtr;
-        int playerExternalId;
+        PlayerId playerExternalId;
     };
     typedef std::vector<PlayerState> Players;
 
@@ -24,7 +25,7 @@ namespace Tournament
         TeamState(Tournament::Players p);
 
         int wins;
-        int teamId;
+        TeamId teamId;
         Players players;
     private:
         static int teamCnt;
@@ -40,10 +41,10 @@ public:
 private:
     Tournament::Players players;
     Tournament::Teams teams;
-    int nextToPlayID = 1;
+    PlayerId nextToPlayID = 1;
 
     void initPlayers(Tournament::Players players);
     void initTeams(Tournament::Players players);
-    void endTournament(int winTeamId);
+    void endTournament(TeamId winTeamId);
     bool isTournamentOver();
 };
