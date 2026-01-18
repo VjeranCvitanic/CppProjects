@@ -183,6 +183,8 @@ std::string Cards::ColorToString(Color color)
             return "Denari";
         case Bastoni:
             return "Bastoni";
+        case NoColor:
+            return "NoColor";
         default:
             LOG_WARNING("Color: ", color);
             return "InvalidColor";

@@ -88,9 +88,9 @@ void CardsTournament::start()
             return std::make_unique<Briscola>(p);
         }
     );
-    int winTeamId;
-    briscola.startMatch(winTeamId);
-    teams[winTeamId].wins++;
+    TeamId winTeamId = -1;
+    //briscola.startMatch(winTeamId);
+    //teams[winTeamId].wins++;
 
     CardsMatch tressette(
         teamsMatch,

@@ -26,15 +26,17 @@ protected:
     CardSet drawCards(int8_t numCards);
     void dealCards(int8_t numCards);
     void InitRound();
-    virtual void playRound();
+    void playRound();
     Points calculateRoundValue(CardSet playedHand);
 
     virtual void InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards);
     void informPlayers(CardSet playedHand, Card roundWinner, PlayerId winnerId);
-    void informPlayers(Card playedCard, PlayerId playerId);
+    void informPlayers(Move move, PlayerId playerId);
 
 private:
     void logStartRound();
     void notifyStartRound();
+    virtual void preMoveSetup(PlayerId i);
+    virtual void postMoveSetup(Move move);
 };
 

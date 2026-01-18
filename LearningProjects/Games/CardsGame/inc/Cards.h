@@ -19,7 +19,8 @@ enum Color
     Coppe,
     Denari,
     Bastoni,
-    InvalidColor
+    InvalidColor,
+    NoColor
 };
 
 enum Number

@@ -17,18 +17,15 @@ Briscola::Briscola(Game::Teams& _teams) :
 void Briscola::Game(GameResult& gameResult)
 {
     CardsGame::Game(gameResult);
-
+    
     dealCards(2 * numPlayers);
 
-    while(deck.getDeck().size() > 0)
+    while(currRound.roundNumber < 10)
     {
-        dealCards(handSize);
-
+        if(deck.getDeck().size() > 0)
+            dealCards(handSize);
         playRound();
     }
-
-    while(currRound.roundNumber < 10)
-        playRound();
 
     gameResult.winTeamId = -1;
     for(auto& t : teams)

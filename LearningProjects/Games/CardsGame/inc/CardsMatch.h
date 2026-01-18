@@ -42,10 +42,10 @@ public:
     CardsMatch(Match::Teams& players, GameFactory factory);
     void startMatch(TeamId& winTeamId);
 private:
-    bool isMatchOver(TeamId& winTeamId);
-
     GameFactory factory;
     Match::Teams teams;
     std::shared_ptr<CardsGame> gamePtr;
     int gameCnt = 0;
+
+    void printMatchState();
 };

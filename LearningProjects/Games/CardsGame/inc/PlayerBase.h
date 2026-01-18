@@ -11,7 +11,7 @@ public:
     virtual ~PlayerBase() = default;
 
     // callbacks
-    virtual Card PlayCard(const CardSet&) = 0;
+    virtual void PlayMove(const CardSet&, Move& move);
     void ReceiveCard(Card card);
     virtual void startNewRound();
     virtual void startGame();
@@ -28,7 +28,7 @@ public:
     void setPlayerId(PlayerId id);
     void setGamePtr(CardsGame* ptr);
     virtual void setRoundEnd(bool winner, Points roundValue);
-    virtual void updateLastPlayedCard(Card playedCard, PlayerId playerId);
+    virtual void updateLastPlayedCard(Move move, PlayerId playerId);
     void eraseCard(Card playedCard);
 
 protected:

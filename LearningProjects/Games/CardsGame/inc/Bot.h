@@ -9,8 +9,8 @@ public:
     Bot() = default;
     ~Bot() override = default;
 
-    Card PlayCard(const CardSet&) override;
-    void updateLastPlayedCard(Card playedCard, PlayerId playerId) override;
+    void PlayMove(const CardSet&, Move& move) override;
+    void updateLastPlayedCard(Move move, PlayerId playerId) override;
 
 private:
     std::vector<std::tuple<PlayerBase*, Card>> drawnCards;

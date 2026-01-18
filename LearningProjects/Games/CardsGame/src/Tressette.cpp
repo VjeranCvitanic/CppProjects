@@ -11,24 +11,35 @@ void Tressette::Game(GameResult& gameResult)
 {
     CardsGame::Game(gameResult);
 
+
     dealCards(10 * numPlayers);
 
-    while(deck.getDeck().size() > 0)
+    while(currRound.roundNumber < 40 / (numPlayers))
     {
         playRound();
-        dealCards(numPlayers);
+        if(currRound.roundResult.playerCalledBastaId != -1)
+        {
+            LOG_INFO("Early exit due to basta call");
+            break;
+        }
+        if(deck.getDeck().size() > 0)
+            dealCards(numPlayers);
     }
 
-    while(currRound.roundNumber < 40 / (numPlayers))
-        playRound();
+    PlayerId lastRoundWinnerPlayerId = currRound.nextToPlayIndex;
 
-    teams[currRound.nextToPlayIndex%2].points += 1; // last round win in tressete temp impl TODO
-
+    if(currRound.roundResult.playerCalledBastaId == -1)
+    {
+        teams[lastRoundWinnerPlayerId%2].points += 1; // last round win in tressete temp impl
+    }
     gameResult.winTeamId = -1;
     for(auto& t : teams)
     {
         gameResult.teamPoints[t.teamId] += t.points;
     }
+
+    gameResult.playerCalledBastaId = currRound.roundResult.playerCalledBastaId;
+    gameResult.lastRoundWinPlayerId = lastRoundWinnerPlayerId;
 }
 
 void Tressette::setColorConstraint(Color color)
@@ -36,50 +47,32 @@ void Tressette::setColorConstraint(Color color)
     moveConstraints.colorToPlay = color;
 }
 
-void Tressette::playRound()
+void Tressette::preMoveSetup(PlayerId i)
 {
-    InitRound();
-    CardSet playedHand;
-
-    firstCardPlayedInRoundColor = InvalidColor;
-    for(PlayerId i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + handSize; i++)
+    auto& team = teams[i%2];
+    auto& playerStatePtr = team.players[i%numPlayers/2];
+    if(currRound.roundNumber == 1)
     {
-        Card playedCard;
-        auto& team = teams[i%2];
-        auto& playerStatePtr = team.players[i%numPlayers/2];
-        if(currRound.roundNumber == 1)
-        {
-            int pts = AcussoCheck(playerStatePtr.playerPtr);
-            team.points += pts;
-            LOG_DEBUG("Acusso pts: ", pts);
-        }
-        setColorConstraint(firstCardPlayedInRoundColor);
-        do {
-            LOG_DEBUG("Before playing: Player", i, "hand"), playerStatePtr.playerHand.logDeck();
-            playedCard = playerStatePtr.playerPtr->PlayCard(playedHand);
-
-        }while (!checkConstraints(playerStatePtr.playerHand.getDeck(), playedCard));
-
-        playerStatePtr.playerPtr->eraseCard(playedCard);
-
-        playerStatePtr.playerHand.eraseCard(playedCard);
-
-        if(firstCardPlayedInRoundColor == InvalidColor)
-        {
-            firstCardPlayedInRoundColor = Cards::getColor(playedCard);
-        }
-        LOG_INFO("Player ", i%numPlayers, " played: ", Cards::CardToString(playedCard));
-        playedHand.push_back(playedCard);
-        informPlayers(playedCard, i % numPlayers);
+        int pts = AcussoCheck(playerStatePtr.playerPtr);
+        team.points += pts;
+        LOG_DEBUG("Acusso pts: ", pts);
     }
+    setColorConstraint(currRound.firstCardPlayedInRoundColor);
+}
 
-    Card roundWinner;
-    PlayerId winnerId = (HandWinner(playedHand, roundWinner) + currRound.nextToPlayIndex) % numPlayers;
-    informPlayers(playedHand, roundWinner, winnerId);
-
-    currRound.nextToPlayIndex = winnerId;
-
-    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerId, "player points: ", teams[winnerId].points);
+void Tressette::postMoveSetup(Move move)
+{
+    PlayerId firstToPlayInThisRound = currRound.nextToPlayIndex;
+    if(currRound.firstCardPlayedInRoundColor == NoColor)
+    {
+        currRound.firstCardPlayedInRoundColor = Cards::getColor(move.card);
+    }
+    LOG_DEBUG("teamId", move.teamID, "firstToPlay:", firstToPlayInThisRound); //TODO bug
+    if(move.call == ConQuestaBasta && move.teamID == firstToPlayInThisRound%2)
+    {
+        LOG_DEBUG("ConQuestaBasta", firstToPlayInThisRound);
+        currRound.roundResult.playerCalledBastaId = firstToPlayInThisRound;
+    }
 }
 
 void Tressette::printGameState()
@@ -87,7 +80,7 @@ void Tressette::printGameState()
     printLines();
     CardsGame::printGameState();
     print("First color in round: ");
-    print(Cards::ColorToString(firstCardPlayedInRoundColor));
+    print(Cards::ColorToString(currRound.firstCardPlayedInRoundColor));
     newLine();
     print("Round number: ");
     print(currRound.roundNumber);
@@ -99,8 +92,11 @@ void Tressette::printGameState()
             print("Player ");
             print(p.playerPtr->getPlayerId());
             print(" acussos: ");
-            if(!Acussos.empty())
-                printAcussos(Acussos.at(p.playerPtr->getPlayerId()));
+            auto it = Acussos.find(p.playerPtr->getPlayerId());
+            if (it != Acussos.end())
+            {
+                printAcussos(it->second);
+            }
             print("\n");
         }
     }
@@ -141,7 +137,7 @@ void Tressette::printAcussos(std::vector<AcussoType> acussos)
     if(acussos.empty())
         return;
     for(auto& a : acussos)
-        print(acussoToString(a));
+        print(acussoToString(a)), print(", ");
 }
 
 Card Tressette::StrongerCard(Card card1, Card card2)
@@ -221,13 +217,13 @@ int Tressette::SameNumberAcusso(CardSet hand, std::vector<AcussoType>& Acussos)
     int pts = 0;
     for(int n = Asso; n <= Tre; n++)
     {
-        Color senza = InvalidColor;
+        Color senza = NoColor;
         bool flag = true;
         for(int c = Spade; c <= Bastoni; c++)
         {
             if(!Cards::isCardInCardSet(hand, Cards::makeCard(static_cast<Color>(c), static_cast<Number>(n))))
             {
-                if(senza == InvalidColor)
+                if(senza == NoColor)
                 {
                     senza = static_cast<Color>(c);
                 }
@@ -237,7 +233,7 @@ int Tressette::SameNumberAcusso(CardSet hand, std::vector<AcussoType>& Acussos)
                 }
             }
         }
-        if(flag && senza == InvalidColor)
+        if(flag && senza == NoColor)
         {
             pts += 4;
             switch(n)
@@ -365,7 +361,7 @@ int Tressette::Napolitana(CardSet hand, std::vector<AcussoType>& Acussos)
 
 bool Tressette::checkConstraints(const CardSet& hand, Card card)
 {
-    if(moveConstraints.colorToPlay != InvalidColor && Cards::getColor(card) != moveConstraints.colorToPlay)
+    if(moveConstraints.colorToPlay != NoColor && Cards::getColor(card) != moveConstraints.colorToPlay)
     {
         for(int i = Asso; i <= Re; i++)
         {

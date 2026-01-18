@@ -22,9 +22,9 @@ void PlayerBase::setGamePtr(CardsGame* ptr)
     gamePtr = ptr;
 }
 
-void PlayerBase::updateLastPlayedCard(Card playedCard, PlayerId playerId)
+void PlayerBase::updateLastPlayedCard(Move move, PlayerId playerId)
 {
-    round.playedCardsInRound.AddCard(playedCard);
+    round.playedCardsInRound.AddCard(move.card);
 }
 
 void PlayerBase::setRoundEnd(bool winner, Points roundValue)
@@ -107,4 +107,10 @@ void PlayerBase::setTeamId(TeamId id)
 void PlayerBase::eraseCard(Card playedCard)
 {
     hand.eraseCard(playedCard);
+}
+
+void PlayerBase::PlayMove(const CardSet&, Move& move)
+{
+    move.teamID = teamId;
+    move.call = NoCall;
 }

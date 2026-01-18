@@ -22,7 +22,14 @@ enum GameType
     InvalidGameType = 0,
     BriscolaGame,
     TressetteGame,
+};
 
+enum Call
+{
+    NoCall = 0,
+    Busso,
+    Striscio,
+    ConQuestaBasta
 };
 
 namespace Game
@@ -52,17 +59,35 @@ namespace Game
     typedef std::vector<TeamState> Teams;
 }
 
+struct Move
+{
+public:
+    Card card;
+    Call call;
+    TeamId teamID;
+};
+
+struct RoundResult
+{
+    std::unordered_map<TeamId, Points> score;
+    PlayerId playerCalledBastaId = -1;
+};
+
 struct Round
 {
     Deck playedCardsInRound;
     PlayerId nextToPlayIndex = 0;
     int roundNumber = 0;
+    RoundResult roundResult;
+    Color firstCardPlayedInRoundColor = NoColor;
 };
 
 struct GameResult
 {
     TeamId winTeamId;
     std::unordered_map<TeamId, Points> teamPoints;
+    PlayerId playerCalledBastaId = -1;
+    PlayerId lastRoundWinPlayerId = -1;
 };
 
 class GameState
@@ -73,6 +98,7 @@ public:
     Deck getDeck();
     Card getCard(int8_t pos);
     virtual Card getLastCard() const;
+    static std::string CallToString(Call call);
 
     Game::Teams teams;
 

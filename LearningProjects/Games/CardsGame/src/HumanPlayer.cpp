@@ -4,29 +4,34 @@
 #include <tuple>
 #include <vector>
 
-Card HumanPlayer::PlayCard(const CardSet& playedHand)
+void HumanPlayer::PlayMove(const CardSet& cards, Move& move)
 {
+    PlayerBase::PlayMove(cards, move);
+    move.call = NoCall;
     if(hand.getDeck().empty())
     {
         LOG_ERROR("No cards in hand to play");
-        return Cards::makeCard(InvalidColor, InvalidNumber);
+        move.card = Cards::makeCard(InvalidColor, InvalidNumber);
+        return;
     }
 
-    Card playedCard = parseInput();
-    return playedCard;
+    move = parseInput();
 }
 
-Card HumanPlayer::parseInput()
+Move HumanPlayer::parseInput()
 {
     ReturnVal val = DEFAULT;
-    Card card = std::make_tuple(InvalidColor, InvalidNumber);
+    Move move = {.card = std::make_tuple(InvalidColor, InvalidNumber), .call = NoCall};
     std::string input;
 
     do
     {
         switch (val) {
             case RETURN_HELP:
-                print("Enter your card: Color (S, B, D, C), Number (1 - 13) / help (to see hand) / game (to see game state)\n");
+                print("Enter your card: Color (S, B, D, C), Number (1 - 13)");
+                if(gamePtr->gameType == TressetteGame)
+                    print(" (optional: call (Busso (B), Striscio (S), QuestaBasta (Q))");
+                print(" / help (to see hand) / game (to see game state)\n");
                 printHand();
                 break;
             case RETURN_GAME_STATE:
@@ -36,8 +41,9 @@ Card HumanPlayer::parseInput()
                 print("Invalid input: "), print(input), print(", please try again\n");
                 break;
             case RETURN_SUCCESS:
-                if(isCardInDeck(card))
-                    return card;
+                if(isCardInDeck(move.card))
+                    return move;
+                break;
             case RETURN_INVALID_CARD:
                 print("Invalid card: "), print(input), print("\nHand: "), printHand(), print("please try again\n");
                 break;
@@ -51,12 +57,12 @@ Card HumanPlayer::parseInput()
         std::cin >> input;
         getchar();
 
-        val = parse(input, card);
+        val = parse(input, move);
     }while(true);
 
 
     LOG_ERROR("Impossible");
-    return std::make_tuple(InvalidColor, InvalidNumber);
+    return move;
 }
 
 void HumanPlayer::setRoundEnd(bool winner, Points roundValue)
@@ -72,8 +78,9 @@ void HumanPlayer::setRoundEnd(bool winner, Points roundValue)
     getchar();
 }
 
-ReturnVal HumanPlayer::parse(std::string input, Card& card)
+ReturnVal HumanPlayer::parse(std::string input, Move& move)
 {
+    LOG_DEBUG("input size: ", input.size());
     if(input == "help")
         return RETURN_HELP;
     if(input == "game")
@@ -81,8 +88,10 @@ ReturnVal HumanPlayer::parse(std::string input, Card& card)
 
     Color color;
     int _number = 0;
+    Card card;
+    Call call = NoCall;
 
-    if (input.size() < 2 || input.size() > 3)
+    if (input.size() < 2 || input.size() > 4)
     {
         return RETURN_INVALID_INPUT;
     } 
@@ -106,9 +115,29 @@ ReturnVal HumanPlayer::parse(std::string input, Card& card)
     }
 
     for (size_t i = 1; i < input.size(); ++i) {
-        if (!std::isdigit(input[i]))
-            return RETURN_INVALID_INPUT;
-        _number = _number * 10 + (input[i] - '0');
+        if (std::isdigit(input[i]))
+        {
+            _number = _number * 10 + (input[i] - '0');
+        }
+        else
+        {
+            switch(std::toupper(input[i]))
+            {
+                case 'B' :
+                    call = Busso;
+                    break;
+                case 'S' :
+                    call = Striscio;
+                    break;
+                case 'Q' :
+                    call = ConQuestaBasta;
+                    break;
+                default:
+                    call = NoCall;
+                    break;
+            }
+            i = input.size(); // exit loop
+        }
     }
 
     card = std::make_tuple(color, Cards::intToNumber(_number));
@@ -116,17 +145,25 @@ ReturnVal HumanPlayer::parse(std::string input, Card& card)
     if(!checkConstraints(card))
         return RETURN_CONSTRAINT;
 
+    move = {.card = card, .call = call};
+
+    LOG_DEBUG("move", Cards::CardToString(card), " ", GameState::CallToString(call));
+
     return RETURN_SUCCESS;
 }
 
 
-void HumanPlayer::updateLastPlayedCard(Card playedCard, PlayerId playerId)
+void HumanPlayer::updateLastPlayedCard(Move move, PlayerId playerId)
 {
-    PlayerBase::updateLastPlayedCard(playedCard, playerId);
+    PlayerBase::updateLastPlayedCard(move, playerId);
     print("\t\tPlayer ");
     print(playerId);
     print(" -> Card played: ");
-    print(Cards::CardToString(playedCard));
+    print(Cards::CardToString(move.card));
+    if(gamePtr->gameType == TressetteGame && move.call != NoCall)
+    {
+        print(" called: "), print(CardsGame::CallToString(move.call));
+    }
     newLine();
 }
 

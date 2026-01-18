@@ -67,13 +67,13 @@ void CardsGame::informPlayers(CardSet playedHand, Card roundWinner, PlayerId win
     }
 }
 
-void CardsGame::informPlayers(Card playedCard, PlayerId playerId)
+void CardsGame::informPlayers(Move move, PlayerId playerId)
 {
     for(auto& t : teams)
     {
         for(auto& p : t.players)
         {
-            p.playerPtr->updateLastPlayedCard(playedCard, playerId);
+            p.playerPtr->updateLastPlayedCard(move, playerId);
         }
     }
 }
@@ -203,7 +203,11 @@ void CardsGame::logStartRound()
 
 void CardsGame::InitRound()
 {
+    currRound.firstCardPlayedInRoundColor = NoColor;
+    currRound.playedCardsInRound.eraseDeck();
     currRound.roundNumber++;
+    currRound.roundResult.playerCalledBastaId = -1;
+    currRound.roundResult.score = {};
     logStartRound();
     notifyStartRound();
 }
@@ -219,25 +223,38 @@ void CardsGame::notifyStartRound()
     }
 }
 
+void CardsGame::preMoveSetup(PlayerId i)
+{}
+
+void CardsGame::postMoveSetup(Move move)
+{}
+
 void CardsGame::playRound()
 {
     InitRound();
     CardSet playedHand;
+
     for(PlayerId i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + handSize; i++)
     {
         Card playedCard;
+        Move move;
 
-        Game::PlayerState* playerStatePtr = &teams[i%2].players[i%numPlayers/2];
+        auto& team = teams[i%2];
+        auto& playerStatePtr = team.players[i%numPlayers/2];
+        this->preMoveSetup(i);
         do {
-            LOG_DEBUG("Before playing: Player", playerStatePtr->playerPtr->getPlayerId(), "hand"), playerStatePtr->playerHand.logDeck();
-            playedCard = playerStatePtr->playerPtr->PlayCard(playedHand);
-        }while (!checkConstraints(playerStatePtr->playerHand.getDeck(), playedCard));
+            LOG_DEBUG("Before playing: Player", playerStatePtr.playerPtr->getPlayerId(), "hand"), playerStatePtr.playerHand.logDeck();
 
-        playerStatePtr->playerHand.eraseCard(playedCard);
-        playerStatePtr->playerPtr->eraseCard(playedCard);
-        LOG_INFO("Player ", playerStatePtr->playerPtr->getPlayerId(), " played: ", Cards::CardToString(playedCard));
+            playerStatePtr.playerPtr->PlayMove(playedHand, move); 
+            playedCard = move.card;
+        }while (!checkConstraints(playerStatePtr.playerHand.getDeck(), playedCard));
+
+        playerStatePtr.playerHand.eraseCard(playedCard);
+        playerStatePtr.playerPtr->eraseCard(playedCard);
+        this->postMoveSetup(move);
+        LOG_INFO("Player ", playerStatePtr.playerPtr->getPlayerId(), " played: ", Cards::CardToString(playedCard));
         playedHand.push_back(playedCard);
-        informPlayers(playedCard, i % numPlayers);
+        informPlayers(move, i % numPlayers);
     }
 
     Card roundWinner;
@@ -265,4 +282,24 @@ void print(const Points p)
     print(" punti e ");
     print(p.bella);
     print(" bella");
+}
+
+std::string GameState::CallToString(Call call)
+{
+    switch(call)
+    {
+        case NoCall:
+            return "NoCall";
+        case Busso:
+            return "Busso";
+        case Striscio:
+            return "Striscio";
+        case ConQuestaBasta:
+            return "ConQuestaBasta";
+        default:
+            LOG_ERROR("Invalid call", call);
+            return "InvalidCall";
+    }
+
+    return "";
 }

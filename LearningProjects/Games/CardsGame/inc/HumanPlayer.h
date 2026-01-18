@@ -20,14 +20,14 @@ public:
     HumanPlayer() = default;
     ~HumanPlayer() override = default;
 
-    Card PlayCard(const CardSet&) override;
+    void PlayMove(const CardSet&, Move& move) override;
     void startNewRound() override;
     void startGame() override;
     void dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards) override;
 
 private:
-    Card parseInput();
-    ReturnVal parse(std::string, Card& card);
+    Move parseInput();
+    ReturnVal parse(std::string, Move& card);
     void setRoundEnd(bool winner, Points roundValue) override;
-    void updateLastPlayedCard(Card playedCard, PlayerId playerId) override;
+    void updateLastPlayedCard(Move move, PlayerId playerId) override;
 };

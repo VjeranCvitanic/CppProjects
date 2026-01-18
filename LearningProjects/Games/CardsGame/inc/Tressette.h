@@ -33,14 +33,6 @@ enum AcussoType
     NoAcusso
 };
 
-enum Calls
-{
-    Busso,
-    Striscio,
-    ConQuestaBasta,
-    NoCall
-};
-
 struct MoveConstraints
 {
     Color colorToPlay;
@@ -62,7 +54,6 @@ protected:
 
 private:
     std::unordered_map<PlayerId, std::vector<AcussoType>> Acussos = {};
-    Color firstCardPlayedInRoundColor = InvalidColor;
     MoveConstraints moveConstraints;
     
     int AcussoCheck(PlayerBase* player);
@@ -75,6 +66,7 @@ private:
     void setColorConstraint(Color color);
     Points getNumberValue(Number number) override;
     Card StrongerCard(Card card1, Card card2) override;
-    void playRound() override;
     void InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards) override;
+    void preMoveSetup(PlayerId i) override;
+    void postMoveSetup(Move move) override;
 };
