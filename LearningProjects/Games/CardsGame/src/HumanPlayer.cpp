@@ -4,10 +4,9 @@
 #include <tuple>
 #include <vector>
 
-void HumanPlayer::PlayMove(const CardSet& cards, Move& move)
+void HumanPlayer::PlayMove(const Moves& moves, Move& move)
 {
-    PlayerBase::PlayMove(cards, move);
-    move.call = NoCall;
+    PlayerBase::PlayMove(moves, move);
     if(hand.getDeck().empty())
     {
         LOG_ERROR("No cards in hand to play");
@@ -15,13 +14,12 @@ void HumanPlayer::PlayMove(const CardSet& cards, Move& move)
         return;
     }
 
-    move = parseInput();
+    parseInput(move);
 }
 
-Move HumanPlayer::parseInput()
+void HumanPlayer::parseInput(Move& move)
 {
     ReturnVal val = DEFAULT;
-    Move move = {.card = std::make_tuple(InvalidColor, InvalidNumber), .call = NoCall};
     std::string input;
 
     do
@@ -42,7 +40,7 @@ Move HumanPlayer::parseInput()
                 break;
             case RETURN_SUCCESS:
                 if(isCardInDeck(move.card))
-                    return move;
+                    return;
                 break;
             case RETURN_INVALID_CARD:
                 print("Invalid card: "), print(input), print("\nHand: "), printHand(), print("please try again\n");
@@ -62,18 +60,17 @@ Move HumanPlayer::parseInput()
 
 
     LOG_ERROR("Impossible");
-    return move;
 }
 
-void HumanPlayer::setRoundEnd(bool winner, Points roundValue)
+void HumanPlayer::setRoundEnd(const RoundResult& roundResult)
 {
-    PlayerBase::setRoundEnd(winner, roundValue);
+    PlayerBase::setRoundEnd(roundResult);
     print("Round ended. You (Id: "), print(playerId), print(") ");
-    if(winner)
+    if(roundResult.winPlayerId == playerId)
         print("won");
     else
         print("lost");
-    print(" this round (points: "), print(roundValue), print(").\n");
+    print(" this round (points: "), print(roundResult.points), print(").\n");
     printLines();
     getchar();
 }
@@ -153,14 +150,14 @@ ReturnVal HumanPlayer::parse(std::string input, Move& move)
 }
 
 
-void HumanPlayer::updateLastPlayedCard(Move move, PlayerId playerId)
+void HumanPlayer::updateLastPlayedMove(Move move)
 {
-    PlayerBase::updateLastPlayedCard(move, playerId);
+    PlayerBase::updateLastPlayedMove(move);
     print("\t\tPlayer ");
-    print(playerId);
+    print(move.playerId);
     print(" -> Card played: ");
     print(Cards::CardToString(move.card));
-    if(gamePtr->gameType == TressetteGame && move.call != NoCall)
+    if(move.call != NoCall)
     {
         print(" called: "), print(CardsGame::CallToString(move.call));
     }
@@ -179,11 +176,12 @@ void HumanPlayer::startNewRound()
 
 void HumanPlayer::startGame()
 {
+    PlayerBase::startGame();
     printLines();
     print("Game started.\nYour id: ");
     print(playerId);
-    if(teammateId != -1)
-        print("\nTeammate id: "),print(teammateId);
+    if(teammateId.first != -1)
+        print("\nTeammate id: "),print(teammateId.first);
     newLine();
     if(!gamePtr)
         LOG_ERROR("gamePtr is nullptr");
@@ -191,14 +189,14 @@ void HumanPlayer::startGame()
     printLines();
 }
 
-void HumanPlayer::dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards)
+void HumanPlayer::dealtCards(std::vector<std::tuple<fullPlayerId, Card>>& dCards)
 {
     PlayerBase::dealtCards(dCards);
     print("Dealt cards:\n");
     for(auto& tuple : dCards)
     {
         print("Player ");
-        print(std::get<0>(tuple)->getPlayerId());
+        print(std::get<0>(tuple));
         print(" draw ");
         print(Cards::CardToString(std::get<1>(tuple)));
         newLine();

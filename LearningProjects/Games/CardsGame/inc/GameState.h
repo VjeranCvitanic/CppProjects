@@ -5,8 +5,12 @@
 #include <unordered_map>
 #include <vector>
 
+typedef int ExternalPlayerId;
+
 typedef int TeamId;
 typedef int PlayerId;
+
+typedef std::pair<PlayerId, TeamId> fullPlayerId;
 
 class PlayerBase;
 
@@ -35,15 +39,7 @@ enum Call
 namespace Game
 {
     //structs
-    class PlayerState
-    {
-    public:
-        PlayerState(PlayerBase*);
-
-        PlayerBase* playerPtr;
-        Deck playerHand;
-    };
-    typedef std::vector<PlayerState> Players;
+    typedef std::vector<PlayerBase*> Players;
 
     class TeamState
     {
@@ -64,36 +60,45 @@ struct Move
 public:
     Card card;
     Call call;
-    TeamId teamID;
+    fullPlayerId playerId;
+};
+
+typedef std::vector<Move> Moves;
+
+struct MoveConstraints
+{
+    Color colorToPlay;
 };
 
 struct RoundResult
 {
-    std::unordered_map<TeamId, Points> score;
-    PlayerId playerCalledBastaId = -1;
+    Points points;
+    fullPlayerId playerCalledBastaId = {-1, -1};
+    fullPlayerId winPlayerId;
 };
 
 struct Round
 {
-    Deck playedCardsInRound;
-    PlayerId nextToPlayIndex = 0;
+    Moves playedMovesInRound;
+    fullPlayerId nextToPlayIndex = {0, 0};
     int roundNumber = 0;
     RoundResult roundResult;
-    Color firstCardPlayedInRoundColor = NoColor;
+    MoveConstraints moveConstraints;
+    int moveCnt = 0;
 };
 
 struct GameResult
 {
     TeamId winTeamId;
-    std::unordered_map<TeamId, Points> teamPoints;
-    PlayerId playerCalledBastaId = -1;
-    PlayerId lastRoundWinPlayerId = -1;
+    Game::Teams teams;
+    fullPlayerId playerCalledBastaId = {-1, -1};
+    fullPlayerId lastRoundWinPlayerId = {-1, -1};
 };
 
 class GameState
 {
 public:
-    GameState();
+    GameState(Game::Teams& teams);
 
     Deck getDeck();
     Card getCard(int8_t pos);
@@ -104,7 +109,6 @@ public:
 
     NumPlayers numPlayers;
     int handSize = 0;
-    Points totalPoints = 0;
 
     Deck deck;
 

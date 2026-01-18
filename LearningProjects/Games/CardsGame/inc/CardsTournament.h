@@ -12,10 +12,10 @@ namespace Tournament
     struct PlayerState
     {
     public:
-        PlayerState(PlayerBase*, PlayerId);
+        PlayerState(PlayerBase*, ExternalPlayerId);
 
         PlayerBase* playerPtr;
-        PlayerId playerExternalId;
+        ExternalPlayerId playerExternalId;
     };
     typedef std::vector<PlayerState> Players;
 
@@ -41,7 +41,7 @@ public:
 private:
     Tournament::Players players;
     Tournament::Teams teams;
-    PlayerId nextToPlayID = 1;
+    fullPlayerId nextToPlayID = {-1, -1};
 
     void initPlayers(Tournament::Players players);
     void initTeams(Tournament::Players players);

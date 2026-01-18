@@ -53,17 +53,16 @@ public:
 
     //getters
     Card getCard(int8_t pos);
+    Card getRandomCard();
     bool isCardInDeck(Card card);
 
     //setters
     void InsertByNumber(Card card, const CardsGame* gamePtr);
     void AddCard(Card card);
+    void eraseCard(Card card);
     Card popCard();
     void Sort(CardsGame* gamePtr);
-    void eraseCard(Card card);
     void eraseDeck();
-
-    Card getRandomCard();
 
     // print & log
     void logDeck();

@@ -14,8 +14,7 @@ Game::Players makeGamePlayers(const Match::Players& matchPlayers)
 
     for (const auto& p : matchPlayers)
     {
-        Game::PlayerState d(p);
-        result.push_back(d);
+        result.push_back(p);
     }
     return result;
 }
@@ -46,7 +45,7 @@ void CardsMatch::startMatch(TeamId& winTeamId)
         LOG_INFO("Game ", ++gameCnt, " starting");
         gamePtr->logDeck();
         GameResult gameResult;
-        gamePtr->Game(gameResult); // TODO - on end game make sure players hands are empty
+        gamePtr->Game(gameResult);
 
         switch (gamePtr->gameType) {
             case BriscolaGame: // TODO abstract
@@ -64,22 +63,22 @@ void CardsMatch::startMatch(TeamId& winTeamId)
                 }
                 break;
             case TressetteGame:
-                if(gameResult.playerCalledBastaId != -1)
+                if(gameResult.playerCalledBastaId.first != -1)
                 {
                     LOG_DEBUG("Player that called basta: ", gameResult.playerCalledBastaId);
-                    TeamId teamId = gameResult.playerCalledBastaId%2;
-                    auto& team = teams[teamId];
-                    int punti = team.score.points.punta + gameResult.teamPoints[team.teamId].punta;
+                    fullPlayerId playerId = gameResult.playerCalledBastaId;
+                    auto& team = teams[playerId.second];
+                    int punti = team.score.points.punta + gameResult.teams[playerId.second].points.punta;
                     if(punti >= 11 && gameResult.lastRoundWinPlayerId == gameResult.playerCalledBastaId)
                     {
-                        LOG_INFO("Team", teamId, "called basta and won");
-                        winTeamId = teamId;
+                        LOG_INFO("Team", playerId.second, "called basta and won");
+                        winTeamId = playerId.second;
                         matchOver = true;
                     }
                     else
                     {
-                        LOG_INFO("Team", teamId, "called basta and lost");
-                        TeamId otherTeamId = (teamId + 1) % 2;
+                        LOG_INFO("Team", playerId.second, "called basta and lost");
+                        TeamId otherTeamId = (playerId.second + 1) % 2;
                         teams[otherTeamId].score.points += 11;
                     }
                 }
@@ -89,7 +88,7 @@ void CardsMatch::startMatch(TeamId& winTeamId)
                     for(auto& t : teams)
                     {
                         LOG_INFO("teamId: ", t.teamId);
-                        t.score.points.punta += gameResult.teamPoints[t.teamId].punta;
+                        t.score.points.punta += gameResult.teams[t.teamId].points.punta;
                         LOG_INFO(t.score.points.punta);
                     }
                 }

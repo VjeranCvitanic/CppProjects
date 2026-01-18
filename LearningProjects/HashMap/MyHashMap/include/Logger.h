@@ -19,6 +19,15 @@
 
 #include "../../../Games/CardsGame/inc/Points.h"
 
+using fullPlayerId = std::pair<int, int>;
+
+inline std::ostream& operator<<(std::ostream& os,
+                                const fullPlayerId& id)
+{
+    os << id.first << ", " << id.second;
+    return os;
+}
+
 #define MAX_NUM_LOGS_IN_ROTATION 9
 
 #define DEBUG 1

@@ -2,12 +2,9 @@
 #include "../inc/PlayerBase.h"
 
 CardsGame::CardsGame(Game::Teams& _teams) :
-    GameState(), GameRules()
+    GameState(_teams), GameRules()
 {
     LOG_DEBUG("CardsGame ctor");
-    teams = _teams;
-    numPlayers = static_cast<NumPlayers>(teams[0].players.size() * 2);
-    LOG_DEBUG("numPlayers: ", numPlayers);
 }
 
 void CardsGame::Game(GameResult& gameResult)
@@ -15,22 +12,22 @@ void CardsGame::Game(GameResult& gameResult)
     LOG_DEBUG("Start game");
     for(auto& t : teams)
     {
-        for(auto& p: t.players)
+        for(auto playerPtr: t.players)
         {
-            p.playerPtr->setGamePtr(this);
-            p.playerPtr->startGame();
+            playerPtr->setGamePtr(this);
+            playerPtr->startGame();
         }
     }
 }
 
-GameState::GameState()
+GameState::GameState(Game::Teams& _teams)
 {
+    LOG_DEBUG("GameState ctor");
     deck = Deck(true);
+    teams = _teams;
+    numPlayers = static_cast<NumPlayers>(teams[0].players.size() * 2);
+    LOG_DEBUG("numPlayers: ", numPlayers);
 }
-
-Game::PlayerState::PlayerState(PlayerBase* ptr) : 
-    playerPtr(ptr)
-{}
 
 Deck GameState::getDeck()
 {
@@ -46,34 +43,24 @@ void CardsGame::logDeck()
     deck.logDeck();
 }
 
-void CardsGame::informPlayers(CardSet playedHand, Card roundWinner, PlayerId winnerId)
+void CardsGame::informPlayersRoundEnd(const RoundResult& roundResult)
 {
-    Points roundValue = calculateRoundValue(playedHand);
-    totalPoints += roundValue;
-
-    for(int i = 0; i < teams.size(); i++)
+    for(auto& t : teams)
     {
-        bool w = false;
-        if(teams[i].teamId == winnerId)
+        for(auto& playerPtr : t.players)
         {
-            teams[i].points += roundValue;
-            w = true;
-        }
-
-        for(auto& p : teams[i].players)
-        {
-            p.playerPtr->setRoundEnd(w, roundValue);
+            playerPtr->setRoundEnd(roundResult);
         }
     }
 }
 
-void CardsGame::informPlayers(Move move, PlayerId playerId)
+void CardsGame::informPlayersLastMove(const Move& move)
 {
     for(auto& t : teams)
     {
-        for(auto& p : t.players)
+        for(auto& playerPtr : t.players)
         {
-            p.playerPtr->updateLastPlayedCard(move, playerId);
+            playerPtr->updateLastPlayedMove(move);
         }
     }
 }
@@ -94,33 +81,32 @@ void CardsGame::dealCards(int8_t numCards)
 {
     LOG_DEBUG("Deal cards: ", +numCards);
     CardSet drawnCards = drawCards(numCards);
-    std::vector<std::tuple<PlayerBase*, Card>> dealtCards;
+    std::vector<std::tuple<fullPlayerId, Card>> dealtCards;
 
-    for(int i = 0; i < numCards; i++)
+    for(int i = currRound.nextToPlayIndex.first; i < numCards + currRound.nextToPlayIndex.first; i++)
     {
         Card card = drawnCards[i];
         LOG_DEBUG("Dealing...");
-        PlayerId index = (i + currRound.nextToPlayIndex);
-        auto& team = teams[index % 2];
-        LOG_DEBUG("Team: ", team.teamId, " size: ", team.players.size(), "index: ", index, "pos: ", (index % (numPlayers/2)));
-        auto& player = team.players[index % team.players.size()];
-        player.playerPtr->ReceiveCard(card);
-        player.playerHand.AddCard(card);
+        fullPlayerId playerId = {i % numPlayers, i % (numPlayers/2)};
+        auto& team = teams[playerId.second];
+        LOG_DEBUG("Team: ", team.teamId, " size: ", team.players.size(), "playerId: ", playerId.first);
+        auto playerPtr = team.players[playerId.first / 2];
+        playerPtr->ReceiveCard(card);
         
-        dealtCards.push_back(std::make_tuple(player.playerPtr, card));
+        dealtCards.push_back(std::make_tuple(playerPtr->getPlayerId(), card));
     }
 
     if(currRound.roundNumber > 0)
         InformDealtCards(dealtCards);
 }
 
-void CardsGame::InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards)
+void CardsGame::InformDealtCards(std::vector<std::tuple<fullPlayerId, Card>>& dealtCards)
 {
     return;
 }
 
 
-int8_t CardsGame::HandWinner(CardSet& playedHand, Card& winnerCard)
+int8_t CardsGame::HandWinner(const CardSet& playedHand, Card& winnerCard)
 {
     if(playedHand.size() != handSize)
     {
@@ -176,10 +162,10 @@ void CardsGame::printGameState()
     {
         print("team ");
         print(t.teamId);
-        for(auto& p : t.players)
+        for(auto playerPtr : t.players)
         {
             print(" Player ");
-            print(p.playerPtr->getPlayerId());
+            print(playerPtr->getPlayerId());
         }
         print(", points: ");
         print(t.points);
@@ -192,10 +178,10 @@ void CardsGame::logStartRound()
     LOG_DEBUG("Round: ", currRound.roundNumber);
     for(auto& t : teams)
     {
-        for(auto& p : t.players)
+        for(auto playerPtr : t.players)
         {
-            LOG_DEBUG("Player ", p.playerPtr->getPlayerId(), " hand: ");
-            p.playerHand.logDeck();
+            LOG_DEBUG("Player ", playerPtr->getPlayerId(), " hand: ");
+            Cards::logCards(playerPtr->GetHand());
             LOG_DEBUG("Next to play: ", currRound.nextToPlayIndex);
         }
     }
@@ -203,11 +189,12 @@ void CardsGame::logStartRound()
 
 void CardsGame::InitRound()
 {
-    currRound.firstCardPlayedInRoundColor = NoColor;
-    currRound.playedCardsInRound.eraseDeck();
+    currRound.playedMovesInRound = {};
     currRound.roundNumber++;
-    currRound.roundResult.playerCalledBastaId = -1;
-    currRound.roundResult.score = {};
+    currRound.moveCnt = 0;
+    currRound.roundResult.playerCalledBastaId = {-1, -1};
+    currRound.roundResult.winPlayerId = {-1, -1};
+    currRound.roundResult.points = 0;
     logStartRound();
     notifyStartRound();
 }
@@ -216,14 +203,14 @@ void CardsGame::notifyStartRound()
 {
     for(auto& t : teams)
     {
-        for(auto& p : t.players)
+        for(auto playerPtr : t.players)
         {
-            p.playerPtr->startNewRound();
+            playerPtr->startNewRound();
         }
     }
 }
 
-void CardsGame::preMoveSetup(PlayerId i)
+void CardsGame::preMoveSetup(fullPlayerId i)
 {}
 
 void CardsGame::postMoveSetup(Move move)
@@ -232,38 +219,69 @@ void CardsGame::postMoveSetup(Move move)
 void CardsGame::playRound()
 {
     InitRound();
-    CardSet playedHand;
 
-    for(PlayerId i = currRound.nextToPlayIndex; i < currRound.nextToPlayIndex + handSize; i++)
+    for(PlayerId i = currRound.nextToPlayIndex.first; i < currRound.nextToPlayIndex.first + handSize; i++)
     {
         Card playedCard;
         Move move;
 
-        auto& team = teams[i%2];
-        auto& playerStatePtr = team.players[i%numPlayers/2];
-        this->preMoveSetup(i);
+        fullPlayerId playerId = {i % numPlayers, i % 2};
+
+        auto& team = teams[playerId.second];
+        auto& playerPtr = team.players[playerId.first % (numPlayers/2)];
+        preMoveSetup(playerId);
         do {
-            LOG_DEBUG("Before playing: Player", playerStatePtr.playerPtr->getPlayerId(), "hand"), playerStatePtr.playerHand.logDeck();
+            LOG_DEBUG("Before playing: Player", playerPtr->getPlayerId(), "hand"), Cards::logCards(playerPtr->GetHand());
 
-            playerStatePtr.playerPtr->PlayMove(playedHand, move); 
+            playerPtr->PlayMove(currRound.playedMovesInRound, move); 
             playedCard = move.card;
-        }while (!checkConstraints(playerStatePtr.playerHand.getDeck(), playedCard));
+        }while (!checkConstraints(playerPtr->GetHand(), playedCard));
 
-        playerStatePtr.playerHand.eraseCard(playedCard);
-        playerStatePtr.playerPtr->eraseCard(playedCard);
-        this->postMoveSetup(move);
-        LOG_INFO("Player ", playerStatePtr.playerPtr->getPlayerId(), " played: ", Cards::CardToString(playedCard));
-        playedHand.push_back(playedCard);
-        informPlayers(move, i % numPlayers);
+        playerPtr->eraseCard(playedCard);
+        postMoveSetup(move);
+        LOG_INFO("Player ", playerPtr->getPlayerId(), " played: ", Cards::CardToString(playedCard));
+        currRound.playedMovesInRound.push_back(move);
+        informPlayersLastMove(move);
     }
 
+    EndRound();
+}
+
+void CardsGame::EndRound()
+{
     Card roundWinner;
-    PlayerId winnerId = (HandWinner(playedHand, roundWinner) + currRound.nextToPlayIndex) % numPlayers;
-    informPlayers(playedHand, roundWinner, winnerId);
+    CardSet cards;
 
+    getDeckFromMoves(currRound.playedMovesInRound, cards);
+    PlayerId playerId = (HandWinner(cards, roundWinner) + currRound.nextToPlayIndex.first) % numPlayers;
+    fullPlayerId winnerId = {playerId, playerId % 2};
+    currRound.roundResult.winPlayerId = winnerId;
+    currRound.roundResult.points = calculateRoundValue(cards);
     currRound.nextToPlayIndex = winnerId;
+    updateGameResult();
 
-    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerId, "player points: ", teams[winnerId].points);
+
+    informPlayersRoundEnd(currRound.roundResult);
+    LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", winnerId, "player points: ", teams[winnerId.second].points);
+}
+
+void CardsGame::updateGameResult()
+{
+    for(auto& t : teams)
+    {
+        if(t.teamId == currRound.roundResult.winPlayerId.second)
+        {
+            t.points += currRound.roundResult.points;
+        }
+    }
+}
+
+void CardsGame::getDeckFromMoves(const Moves& moves, CardSet& cards)
+{
+    for(auto& m : moves)
+    {
+        cards.push_back(m.card);
+    }
 }
 
 Card GameState::getLastCard() const
@@ -276,12 +294,20 @@ bool GameRules::checkConstraints(const CardSet& hand, Card card)
     return true;
 }
 
-void print(const Points p)
+void print(const Points& p)
 {
     print(p.punta);
     print(" punti e ");
     print(p.bella);
     print(" bella");
+}
+
+void print(const fullPlayerId& playerId)
+{
+    print(playerId.first);
+    print(", ");
+    print(playerId.second);
+    newLine();
 }
 
 std::string GameState::CallToString(Call call)

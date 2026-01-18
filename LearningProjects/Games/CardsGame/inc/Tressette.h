@@ -33,11 +33,6 @@ enum AcussoType
     NoAcusso
 };
 
-struct MoveConstraints
-{
-    Color colorToPlay;
-};
-
 class Tressette : public CardsGame
 {
 public:
@@ -53,8 +48,7 @@ protected:
     bool checkConstraints(const CardSet& hand, Card card) override;
 
 private:
-    std::unordered_map<PlayerId, std::vector<AcussoType>> Acussos = {};
-    MoveConstraints moveConstraints;
+    std::unordered_map<fullPlayerId, std::vector<AcussoType>> Acussos = {};
     
     int AcussoCheck(PlayerBase* player);
     void Acusso(CardSet hand, int& points, std::vector<AcussoType>& Acussos);
@@ -66,7 +60,7 @@ private:
     void setColorConstraint(Color color);
     Points getNumberValue(Number number) override;
     Card StrongerCard(Card card1, Card card2) override;
-    void InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards) override;
-    void preMoveSetup(PlayerId i) override;
+    void InformDealtCards(std::vector<std::tuple<fullPlayerId, Card>>& dealtCards) override;
+    void preMoveSetup(fullPlayerId i) override;
     void postMoveSetup(Move move) override;
 };

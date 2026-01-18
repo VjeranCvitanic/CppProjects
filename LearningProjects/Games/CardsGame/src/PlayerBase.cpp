@@ -22,20 +22,12 @@ void PlayerBase::setGamePtr(CardsGame* ptr)
     gamePtr = ptr;
 }
 
-void PlayerBase::updateLastPlayedCard(Move move, PlayerId playerId)
+void PlayerBase::updateLastPlayedMove(Move move)
 {
-    round.playedCardsInRound.AddCard(move.card);
 }
 
-void PlayerBase::setRoundEnd(bool winner, Points roundValue)
+void PlayerBase::setRoundEnd(const RoundResult& roundResult)
 {
-    round.playedCardsInRound.eraseDeck();
-    LOG_DEBUG("Total points: ", gamePtr->totalPoints);
-
-    if(winner)
-    {
-        LOG_DEBUG("My team's points: ", gamePtr->teams[teamId].points);
-    }
 }
 
 bool PlayerBase::isCardInDeck(Card card)
@@ -55,24 +47,25 @@ void PlayerBase::startNewRound()
 void PlayerBase::startGame()
 {
     LOG_DEBUG("");
+    hand.getDeck().clear();
 }
 
-void PlayerBase::setPlayerId(PlayerId id)
+void PlayerBase::setPlayerId(fullPlayerId id)
 {
     playerId = id;
 }
 
-void PlayerBase::setTeammateId(PlayerId id)
+void PlayerBase::setTeammateId(fullPlayerId id)
 {
     teammateId = id;
 }
 
-PlayerId PlayerBase::getTeammateId()
+fullPlayerId PlayerBase::getTeammateId()
 {
     return teammateId;
 }
 
-PlayerId PlayerBase::getPlayerId()
+fullPlayerId PlayerBase::getPlayerId()
 {
     return playerId;
 }
@@ -87,21 +80,16 @@ void PlayerBase::sortHand()
     hand.Sort(gamePtr);
 }
 
-void PlayerBase::dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards)
+void PlayerBase::dealtCards(std::vector<std::tuple<fullPlayerId, Card>>& dCards)
 {
     LOG_INFO("Dealt cards: ");
     for(auto& tuple : dCards)
     {
         LOG_INFO("Player ");
-        LOG_INFO(+std::get<0>(tuple)->getPlayerId());
+        LOG_INFO(std::get<0>(tuple).first);
         LOG_INFO(" draw ");
         LOG_INFO(Cards::CardToString(std::get<1>(tuple)));
     }
-}
-
-void PlayerBase::setTeamId(TeamId id)
-{
-    teamId = id;
 }
 
 void PlayerBase::eraseCard(Card playedCard)
@@ -109,8 +97,10 @@ void PlayerBase::eraseCard(Card playedCard)
     hand.eraseCard(playedCard);
 }
 
-void PlayerBase::PlayMove(const CardSet&, Move& move)
+void PlayerBase::PlayMove(const Moves&, Move& move)
 {
-    move.teamID = teamId;
+    move.playerId = playerId;
     move.call = NoCall;
+
+    LOG_DEBUG("TeamId", move.playerId.second);
 }
