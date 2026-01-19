@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CardsGame.h"
+#include "GameState.h"
 #include "PlayerBase.h"
 
 enum ReturnVal
@@ -20,14 +21,14 @@ public:
     HumanPlayer() = default;
     ~HumanPlayer() override = default;
 
-    void PlayMove(const CardSet&, Move& move) override;
+    void PlayMove(const Moves&, Move& move) override;
     void startNewRound() override;
     void startGame() override;
-    void dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards) override;
+    void dealtCards(std::vector<std::tuple<fullPlayerId, Card>>& dCards) override;
 
 private:
-    Move parseInput();
+    void parseInput(Move& move);
     ReturnVal parse(std::string, Move& card);
-    void setRoundEnd(bool winner, Points roundValue) override;
-    void updateLastPlayedCard(Move move, PlayerId playerId) override;
+    void setRoundEnd(const RoundResult&) override;
+    void updateLastPlayedMove(Move move) override;
 };

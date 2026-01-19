@@ -11,36 +11,31 @@ public:
     virtual ~PlayerBase() = default;
 
     // callbacks
-    virtual void PlayMove(const CardSet&, Move& move);
+    virtual void PlayMove(const Moves&, Move& move);
     void ReceiveCard(Card card);
     virtual void startNewRound();
     virtual void startGame();
-    virtual void dealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dCards);
+    virtual void dealtCards(std::vector<std::tuple<fullPlayerId, Card>>& dCards);
 
     // getters
-    PlayerId getTeammateId();
-    PlayerId getPlayerId();
+    fullPlayerId getTeammateId();
+    fullPlayerId getPlayerId();
     CardSet GetHand();
 
     // setters
-    void setTeammateId(PlayerId id);
-    void setTeamId(TeamId id);
-    void setPlayerId(PlayerId id);
+    void setTeammateId(fullPlayerId id);
+    void setPlayerId(fullPlayerId id);
     void setGamePtr(CardsGame* ptr);
-    virtual void setRoundEnd(bool winner, Points roundValue);
-    virtual void updateLastPlayedCard(Move move, PlayerId playerId);
+    virtual void setRoundEnd(const RoundResult&);
+    virtual void updateLastPlayedMove(Move move);
     void eraseCard(Card playedCard);
 
 protected:
     Deck hand;
-    Points totalPoints = 0;
-    Points myPoints = 0;
-    PlayerId playerId = 0;
-    PlayerId teammateId = -1;
-    TeamId teamId = -1;
+    fullPlayerId playerId = {-1, -1};
+    fullPlayerId teammateId = {-1, -1};
 
     CardsGame* gamePtr;
-    Round round;
 
     bool isCardInDeck(Card card);
     void printHand();

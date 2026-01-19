@@ -3,6 +3,7 @@
 #include <iostream>
 
 class Points;
+using fullPlayerId = std::pair<int, int>;
 
 typedef unsigned long U32;
 typedef unsigned long long U64;
@@ -18,7 +19,8 @@ void print(T data)
 
 void print(int8_t data);
 void print(uint8_t data);
-void print(const Points p);
+void print(const Points& p);
+void print(const fullPlayerId& playerId);
 
 void newLine();
 void printLines();

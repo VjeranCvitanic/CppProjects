@@ -27,8 +27,8 @@ client:
 	PlayCard (card)
 	SetPlayerId (+SetTeammateId)
 	
-	
 
 
 TODO:
+	briscola u dvoje - zadnja runda moguce je vidjeti suigraceve karte
 	grpc, proto

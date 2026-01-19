@@ -11,13 +11,12 @@ void Tressette::Game(GameResult& gameResult)
 {
     CardsGame::Game(gameResult);
 
-
     dealCards(10 * numPlayers);
 
     while(currRound.roundNumber < 40 / (numPlayers))
     {
         playRound();
-        if(currRound.roundResult.playerCalledBastaId != -1)
+        if(currRound.roundResult.playerCalledBastaId.first != -1)
         {
             LOG_INFO("Early exit due to basta call");
             break;
@@ -26,16 +25,16 @@ void Tressette::Game(GameResult& gameResult)
             dealCards(numPlayers);
     }
 
-    PlayerId lastRoundWinnerPlayerId = currRound.nextToPlayIndex;
+    fullPlayerId lastRoundWinnerPlayerId = currRound.nextToPlayIndex;
 
-    if(currRound.roundResult.playerCalledBastaId == -1)
+    if(currRound.roundResult.playerCalledBastaId.first == -1)
     {
-        teams[lastRoundWinnerPlayerId%2].points += 1; // last round win in tressete temp impl
+        teams[lastRoundWinnerPlayerId.second].points += 1; // last round win in tressete temp impl
     }
     gameResult.winTeamId = -1;
     for(auto& t : teams)
     {
-        gameResult.teamPoints[t.teamId] += t.points;
+        gameResult.teams[t.teamId].points += t.points;
     }
 
     gameResult.playerCalledBastaId = currRound.roundResult.playerCalledBastaId;
@@ -44,55 +43,55 @@ void Tressette::Game(GameResult& gameResult)
 
 void Tressette::setColorConstraint(Color color)
 {
-    moveConstraints.colorToPlay = color;
+    currRound.moveConstraints.colorToPlay = color;
 }
 
-void Tressette::preMoveSetup(PlayerId i)
+void Tressette::preMoveSetup(fullPlayerId playerId)
 {
-    auto& team = teams[i%2];
-    auto& playerStatePtr = team.players[i%numPlayers/2];
+    auto& team = teams[playerId.second];
+    auto& playerPtr = team.players[playerId.first / 2];
     if(currRound.roundNumber == 1)
     {
-        int pts = AcussoCheck(playerStatePtr.playerPtr);
+        int pts = AcussoCheck(playerPtr);
         team.points += pts;
         LOG_DEBUG("Acusso pts: ", pts);
     }
-    setColorConstraint(currRound.firstCardPlayedInRoundColor);
 }
 
 void Tressette::postMoveSetup(Move move)
 {
-    PlayerId firstToPlayInThisRound = currRound.nextToPlayIndex;
-    if(currRound.firstCardPlayedInRoundColor == NoColor)
+    fullPlayerId firstToPlayInThisRound = currRound.nextToPlayIndex;
+    if(currRound.moveCnt == 0)
     {
-        currRound.firstCardPlayedInRoundColor = Cards::getColor(move.card);
+        setColorConstraint(Cards::getColor(move.card));
     }
-    LOG_DEBUG("teamId", move.teamID, "firstToPlay:", firstToPlayInThisRound); //TODO bug
-    if(move.call == ConQuestaBasta && move.teamID == firstToPlayInThisRound%2)
+    LOG_DEBUG("teamId", move.playerId.second, "firstToPlay:", firstToPlayInThisRound.second); //TODO bug
+    if(move.call == ConQuestaBasta && move.playerId.second == firstToPlayInThisRound.second)
     {
         LOG_DEBUG("ConQuestaBasta", firstToPlayInThisRound);
         currRound.roundResult.playerCalledBastaId = firstToPlayInThisRound;
     }
+    currRound.moveCnt++;
 }
 
 void Tressette::printGameState()
 {
     printLines();
     CardsGame::printGameState();
-    print("First color in round: ");
-    print(Cards::ColorToString(currRound.firstCardPlayedInRoundColor));
+    print("Strong color in round: ");
+    print(Cards::ColorToString(currRound.moveConstraints.colorToPlay));
     newLine();
     print("Round number: ");
     print(currRound.roundNumber);
     newLine();
     for(auto& t : teams)
     {
-        for(auto& p : t.players)
+        for(auto playerPtr : t.players)
         {
             print("Player ");
-            print(p.playerPtr->getPlayerId());
+            print(playerPtr->getPlayerId().first);
             print(" acussos: ");
-            auto it = Acussos.find(p.playerPtr->getPlayerId());
+            auto it = Acussos.find(playerPtr->getPlayerId().first);
             if (it != Acussos.end())
             {
                 printAcussos(it->second);
@@ -195,12 +194,12 @@ int Tressette::AcussoCheck(PlayerBase* player)
     int points = 0;
     Acusso(player->GetHand(), points, accussos);
 
-    LOG_DEBUG("Player: ", +player->getPlayerId(), " acusso points: ", points);
+    LOG_DEBUG("Player: ", player->getPlayerId().first, " acusso points: ", points);
     for(auto& a : accussos)
     {
         LOG_DEBUG("\tAcusso: ", a);
     }
-    Acussos.insert({player->getPlayerId(), accussos});
+    Acussos.insert({player->getPlayerId().first, accussos});
 
     return points;
 }
@@ -361,16 +360,16 @@ int Tressette::Napolitana(CardSet hand, std::vector<AcussoType>& Acussos)
 
 bool Tressette::checkConstraints(const CardSet& hand, Card card)
 {
-    if(moveConstraints.colorToPlay != NoColor && Cards::getColor(card) != moveConstraints.colorToPlay)
+    if(currRound.moveConstraints.colorToPlay != NoColor && Cards::getColor(card) != currRound.moveConstraints.colorToPlay)
     {
         for(int i = Asso; i <= Re; i++)
         {
-            Card _card = std::make_tuple(moveConstraints.colorToPlay, static_cast<Number>(i));
+            Card _card = std::make_tuple(currRound.moveConstraints.colorToPlay, static_cast<Number>(i));
             if(Cards::isCardInCardSet(hand, _card))
             {
                 LOG_DEBUG("Constraint not met: played card: ");
                 Cards::logCard(card);
-                LOG_DEBUG("Color to play: ", moveConstraints.colorToPlay);
+                LOG_DEBUG("Color to play: ", currRound.moveConstraints.colorToPlay);
                 LOG_DEBUG("Current hand: ");
                 Cards::logCards(hand);
                 return false;
@@ -381,13 +380,13 @@ bool Tressette::checkConstraints(const CardSet& hand, Card card)
     return true;
 }
 
-void Tressette::InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards)
+void Tressette::InformDealtCards(std::vector<std::tuple<fullPlayerId, Card>>& dealtCards)
 {
     for(auto& t : teams)
     {
-        for(auto& p : t.players)
+        for(auto playerPtr : t.players)
         {
-            p.playerPtr->dealtCards(dealtCards);
+            playerPtr->dealtCards(dealtCards);
         }
     }
 }

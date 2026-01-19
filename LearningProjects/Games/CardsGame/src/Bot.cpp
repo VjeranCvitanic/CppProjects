@@ -1,8 +1,8 @@
 #include "../inc/Bot.h"
 
-void Bot::PlayMove(const CardSet& cards, Move& move)
+void Bot::PlayMove(const Moves& moves, Move& move)
 {
-    PlayerBase::PlayMove(cards, move);
+    PlayerBase::PlayMove(moves, move);
     move.call = NoCall;
     if(hand.getDeck().empty())
     {
@@ -14,8 +14,7 @@ void Bot::PlayMove(const CardSet& cards, Move& move)
     move.card = hand.getRandomCard();
 }
 
-
-void Bot::updateLastPlayedCard(Move move, PlayerId playerId)
+void Bot::updateLastPlayedMove(Move move)
 {
-    PlayerBase::updateLastPlayedCard(move, playerId);
+    PlayerBase::updateLastPlayedMove(move);
 }

@@ -22,21 +22,25 @@ public:
     GameType gameType = InvalidGameType;
 
 protected:
-    int8_t HandWinner(CardSet& playedHand, Card& winnerCard);
+    int8_t HandWinner(const CardSet& playedHand, Card& winnerCard);
     CardSet drawCards(int8_t numCards);
     void dealCards(int8_t numCards);
     void InitRound();
+    void EndRound();
     void playRound();
     Points calculateRoundValue(CardSet playedHand);
 
-    virtual void InformDealtCards(std::vector<std::tuple<PlayerBase*, Card>>& dealtCards);
-    void informPlayers(CardSet playedHand, Card roundWinner, PlayerId winnerId);
-    void informPlayers(Move move, PlayerId playerId);
+    virtual void InformDealtCards(std::vector<std::tuple<fullPlayerId, Card>>& dealtCards);
+    void informPlayersRoundEnd(const RoundResult&);
+    void informPlayersLastMove(const Move&);
 
 private:
     void logStartRound();
     void notifyStartRound();
-    virtual void preMoveSetup(PlayerId i);
+    virtual void preMoveSetup(fullPlayerId i);
     virtual void postMoveSetup(Move move);
+    void updateGameResult();
+
+    static void getDeckFromMoves(const Moves& moves, CardSet& cards);
 };
 

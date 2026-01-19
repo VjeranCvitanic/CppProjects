@@ -26,5 +26,5 @@ protected:
 
     Points getNumberValue(Number number) override;
     Card StrongerCard(Card card1, Card card2) override;
-    virtual Color getStrongColor() const;
+    Color getStrongColor() const;
 };

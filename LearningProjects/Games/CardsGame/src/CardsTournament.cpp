@@ -19,14 +19,6 @@ void CardsTournament::initPlayers(Tournament::Players _players)
     std::random_device rd;
     std::default_random_engine rng(rd());
     std::shuffle(players.begin(), players.end(), rng);
-
-    int i = 0;
-    for(auto& p : players)
-    {
-        p.playerPtr->setPlayerId(i);
-
-        i++;
-    }
 }
 
 void CardsTournament::initTeams(Tournament::Players players)
@@ -53,17 +45,22 @@ Tournament::TeamState::TeamState(Tournament::Players p)
     static int teamCnt = 0;
     teamId = teamCnt++;
 
-    players[0].playerPtr->setTeamId(teamId);
+    int i = 0;
+    for(auto& p : players)
+    {
+        p.playerPtr->setPlayerId({2 * i + teamId, teamId});
+
+        i++;
+    }
+
     if(players.size() > 1)
     {
         players[0].playerPtr->setTeammateId(players[1].playerPtr->getPlayerId());
         players[1].playerPtr->setTeammateId(players[0].playerPtr->getPlayerId());
-
-        players[1].playerPtr->setTeamId(teamId);
     }
 }
 
-Tournament::PlayerState::PlayerState(PlayerBase* ptr, int _playerID)
+Tournament::PlayerState::PlayerState(PlayerBase* ptr, ExternalPlayerId _playerID)
    : playerPtr(ptr), playerExternalId(_playerID)
 {
     LOG_DEBUG("constructor");
