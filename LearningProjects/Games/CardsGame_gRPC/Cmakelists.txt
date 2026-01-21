@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.16)
+project(card_games LANGUAGES CXX)
+
+# =========================
+# Global settings
+# =========================
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+# =========================
+# Common library
+# =========================
+add_library(card_core
+    ../../HashMap/MyHashMap/src/Logger.cpp
+    ../Chess_bitmap/src/Utils.cpp
+    src/Cards.cpp
+    src/CardsGame.cpp
+    src/CardsMatch.cpp
+    src/CardsTournament.cpp
+)
+
+target_include_directories(card_core PUBLIC src)
+
+# =========================
+# Tournament executable
+# =========================
+add_executable(tournament
+    src/Briscola.cpp
+    src/Tressette.cpp
+    src/main.cpp
+)
+
+target_link_libraries(tournament PRIVATE card_core)
+
