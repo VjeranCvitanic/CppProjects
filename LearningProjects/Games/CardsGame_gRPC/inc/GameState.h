@@ -16,24 +16,24 @@ namespace Game
     };
     
     typedef std::vector<TeamState> Teams;
+
+    class GameState
+    {
+    public:
+        GameState(Game::Teams& teams);
+
+        Deck getDeck();
+        Card getCard(int8_t pos);
+        virtual Card getLastCard() const;
+
+        Game::Teams teams;
+        Deck deck;
+        CardsRound_NS::CardsRound currRound;
+        int roundNumber = 0;
+
+        NumPlayers numPlayers;
+
+        TeamId winTeamId;
+    };
 }
 
-class GameState
-{
-public:
-    GameState(Game::Teams& teams);
-
-    Deck getDeck();
-    Card getCard(int8_t pos);
-    virtual Card getLastCard() const;
-
-    Round::Teams teams;
-    Deck deck;
-    CardsRound currRound;
-    int roundNumber = 0;
-
-    NumPlayers numPlayers;
-    int handSize = 0;
-
-    TeamId winTeamId;
-};

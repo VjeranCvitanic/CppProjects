@@ -15,9 +15,6 @@
 #include <memory>
 
 #include <string>
-#include <vector>
-
-#include "../../../Games/CardsGame/inc/Points.h"
 
 using fullPlayerId = std::pair<int, int>;
 

@@ -3,6 +3,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 enum Color
 {
@@ -86,6 +87,8 @@ typedef std::pair<PlayerId, TeamId> fullPlayerId;
 typedef std::tuple<Color, Number> Card;
 typedef std::vector<Card> CardSet;
 
+typedef std::unordered_map<fullPlayerId, std::vector<AcussoType>> AcussosMap;
+
 struct Move
 {
 public:
@@ -98,7 +101,10 @@ typedef std::vector<Move> Moves;
 
 struct MoveConstraints
 {
-    Color colorToPlay = NoColor;
+    MoveConstraints() :
+        colorToPlay(NoColor)
+    {}
+    Color colorToPlay;
 };
 
 namespace Domain
@@ -111,3 +117,13 @@ namespace Domain
         Players players;
     };
 }
+
+enum ReturnValue
+{
+    Nok = 0,
+    Ok,
+    Finish,
+    NotYourTurn,
+    CardNotInHand,
+    ColorConstraint
+};

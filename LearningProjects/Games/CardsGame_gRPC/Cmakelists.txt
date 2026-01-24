@@ -17,9 +17,9 @@ add_library(card_core
     ../../HashMap/MyHashMap/src/Logger.cpp
     ../Chess_bitmap/src/Utils.cpp
     src/Cards.cpp
-    src/CardsGame.cpp
-    src/CardsMatch.cpp
-    src/CardsTournament.cpp
+    src/Deck.cpp
+    src/CardsRound.cpp
+    src/BriscolaRound.cpp
 )
 
 target_include_directories(card_core PUBLIC src)
@@ -27,11 +27,9 @@ target_include_directories(card_core PUBLIC src)
 # =========================
 # Tournament executable
 # =========================
-add_executable(tournament
-    src/Briscola.cpp
-    src/Tressette.cpp
+add_executable(main
     src/main.cpp
 )
 
-target_link_libraries(tournament PRIVATE card_core)
+target_link_libraries(main PRIVATE card_core)
 

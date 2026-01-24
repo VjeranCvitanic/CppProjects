@@ -7,7 +7,6 @@
 #include "Types.h"
 #include <cstdint>
 #include <tuple>
-#include <unordered_map>
 #include <vector>
 #include "TressetteRound.h"
 
@@ -23,11 +22,5 @@ public:
 protected:
 private:
     TressetteRound currRound;
-    std::unordered_map<fullPlayerId, std::vector<AcussoType>> Acussos = {};
-    
-    int AcussoCheck(fullPlayerId player);
-    void Acusso(CardSet hand, int& points, std::vector<AcussoType>& Acussos);
-    int Napolitana(CardSet hand, std::vector<AcussoType>& Acussos);
-    int SameNumberAcusso(CardSet hand, std::vector<AcussoType>& Acussos);
-    static const char* acussoToString(AcussoType a);
+    AcussosMap Acussos = {};
 };

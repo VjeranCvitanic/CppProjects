@@ -1,60 +1,91 @@
 #pragma once
 
-#include "RoundRules.h"
-#include "Cards.h"
+#include "Deck.h"
 #include "Types.h"
 #include "Points.h"
+#include "EventEmitter.h"
 
-struct RoundResult
+namespace CardsRound_NS
 {
-    Points points;
-    fullPlayerId playerCalledBastaId = {-1, -1};
-    fullPlayerId winPlayerId;
-};
+    struct PlayerState
+    {
+        fullPlayerId playerId;
+        Deck deck;
+    };
 
-class CardsRound : public RoundRules
-{
-public:
-    int moveCnt = 0;
-    MoveConstraints moveConstraints;
-    fullPlayerId nextToPlayIndex = {0, 0};
+    typedef std::vector<PlayerState> Players;
 
-    std::vector<std::tuple<PlayerId, Card>> dealtCards;
-
-    Moves playedMovesInRound;
-    RoundResult roundResult;
-
-    Color strongColor;
-
-    void InitRound();
-    void EndRound();
-    void playRound();
-    Points calculateRoundValue(CardSet playedHand);
-
-    virtual void preMoveSetup(fullPlayerId i);
-    virtual void postMoveSetup(Move move);
-
-    int8_t getNumberStrength(Number number) const override;
-    Points getNumberValue(Number number) override;
-    bool checkConstraints(const CardSet& hand, Card card) override;
-    Card StrongerCard(Card card1, Card card2) override;
-
-    void logStartRound();
-
-    int8_t strongestCard(const CardSet& hand, Card& winner) const;
-
-private:
-};
-
-namespace Round
-{
     struct TeamState
     {
         Domain::TeamIdentity identity;
-        Deck deck;
-        Points points;
+        Players players;
     };
 
     typedef std::vector<TeamState> Teams;
-}
 
+    struct RoundResult
+    {
+        RoundResult();
+
+        fullPlayerId winnerId;
+        Points points;
+    };
+
+    struct RoundState
+    {
+        RoundState(int _handsize, PlayerId _nextToPlayId, Teams _teams);
+
+        Teams teams;
+        Moves playedMovesInRound;        
+        MoveConstraints moveConstraints;
+
+        Color strongColor;
+
+        int handSize;
+        int numPlayers;
+        PlayerId nextToPlayId;
+        PlayerId firstToPlayId;
+    };
+
+    class RoundRules
+    {
+    public:
+        RoundRules();
+        virtual int8_t getNumberStrength(Number number) = 0;
+        virtual Points getNumberValue(Number number) = 0;
+        virtual Card StrongerCard(const Card& card1, const Card& card2, Color strongColor) = 0;
+        virtual bool IsMoveLegal(const Move&, const RoundState& state, ReturnValue& reason) = 0;
+
+        int8_t StrongestCard(const CardSet& playedHand, Card& winnerCard, Color strongColor);
+    };
+
+    class CardsRound
+    {
+    public:
+        explicit CardsRound(RoundRules& rules, RoundState& state, EventEmitter& _eventEmitter);
+        virtual ~CardsRound() = default;
+
+        RoundState roundState;
+        RoundResult roundResult;
+
+        ReturnValue ApplyMove(const Move&);
+    protected:
+        RoundRules& roundRules;
+        EventEmitter& eventEmitter;
+
+        void logStartRound();
+
+        void InitRound();
+        void EndRound();
+        bool IsFinished();
+        void playMove(const Move&);
+
+        Points CalculateRoundResult();
+
+        int8_t HandWinner(const CardSet& playedHand, Card& winnerCard, Color strongColor);
+
+        virtual void preMoveSetup();
+        virtual void postMoveSetup(const Move&);
+    private:
+    };
+}

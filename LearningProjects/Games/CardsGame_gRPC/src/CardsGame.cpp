@@ -44,18 +44,6 @@ void CardsGame::dealCards(int8_t numCards)
     }
 }
 
-int8_t CardsGame::HandWinner(const CardSet& playedHand, Card& winnerCard)
-{
-    if(playedHand.size() != handSize)
-    {
-        LOG_ERROR("Invalid playedHand size: ", playedHand.size(), ", num of players: ", numPlayers);
-        winnerCard = Cards::makeCard(InvalidColor, InvalidNumber);
-        return -1;
-    }
-
-    return currRound.StrongestCard(playedHand, winnerCard);
-}
-
 CardSet CardsGame::drawCards(int8_t numCards)
 {
     CardSet drawnCards;
@@ -71,20 +59,13 @@ void CardsGame::updateGameResult()
 {
     for(auto& t : teams)
     {
-        if(t.identity.teamId == currRound.roundResult.winPlayerId.second)
+        if(t.identity.teamId == currRound.roundResult.winnerId.second)
         {
-            t.points += currRound.roundResult.points;
+            t.points += currRound.roundResult.totalPoints;
         }
     }
 }
 
-void CardsGame::getDeckFromMoves(const Moves& moves, CardSet& cards)
-{
-    for(auto& m : moves)
-    {
-        cards.push_back(m.card);
-    }
-}
 
 Card GameState::getLastCard() const
 {
