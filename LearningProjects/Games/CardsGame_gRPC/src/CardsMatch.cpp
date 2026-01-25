@@ -25,7 +25,7 @@ ReturnValue CardsMatch_NS::CardsMatch::ApplyMove(const Move& move)
             LOG_INFO(matchResult.score.at(p.first).wonGames);
         }
         matchState.gameCnt++;
-        PlayerId playerId = (matchState.nextToStartId.second + 1) % numPlayers;
+        PlayerId playerId = (currGame->gameState.nextToPlayId.second + 1) % numPlayers;
         matchState.nextToStartId = {playerId%2, playerId};
 
         if(IsFinished())
@@ -42,5 +42,5 @@ ReturnValue CardsMatch_NS::CardsMatch::ApplyMove(const Move& move)
 
 void CardsMatch_NS::CardsMatch::EndMatch()
 {
-    
+
 }

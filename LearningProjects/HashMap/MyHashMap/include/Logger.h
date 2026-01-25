@@ -114,8 +114,18 @@ public:
     void onEvent(const GameEvent& event);
     void LogEvent(const GameEvent& event);
     void LogEv(const PlayerPlayedMoveEvent& e);
-    void LogEv(const PlayerDealtCards& e);
-    void LogEv(const RoundDealtCards& e);
+    void LogEv(const PlayerDealtCardsEvent& e);
+    void LogEv(const StartRoundEvent& e);
+    void LogEv(const TressetteStartRoundEvent& e);
+    void LogEv(const StartGameEvent& e);
+    void LogEv(const StartMatchEvent& e);
+    void LogEv(const RoundOver& e);
+    void LogEv(const GameOver& e);
+    void LogEv(const MatchOver& e);
+    void LogEv(const YourTurnEvent& e);
+    void LogEv(const MoveResponseEvent& e);
+    void LogEv(const AcussoEvent& e);
+    void LogEv(const BriscolaLastRoundEvent& e);
 
 private:
     static std::unique_ptr<Logger> instance;
@@ -140,5 +150,21 @@ private:
     static void print(const T&... msg);
     void flush();
 };
+
+inline std::ostream& operator<<(std::ostream& os, MoveValidity v)
+{
+    switch (v)
+    {
+        case MoveValidity::Ok:
+            return os << "ok";
+        case MoveValidity::NotYourTurn:
+            return os << "NotYourTurn";
+        case MoveValidity::CardNotInDeck:
+            return os << "CardNotInDeck";
+        case MoveValidity::ColorConstraintNotMet:
+            return os << "ColorConstraintNotMet";
+    }
+    return os << "UnknownMoveValidity";
+}
 
 #endif

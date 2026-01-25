@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Events.h"
 #include "EventSink.h"
+#include "Events.h"
 
 class EventEmitter {
 public:

@@ -116,3 +116,20 @@ enum ReturnValue
     CardNotInHand,
     ColorConstraint
 };
+
+enum EventVisibility
+{
+    Private = 0,
+    Teammate = 1,
+    Broadcast
+};
+
+enum class MoveValidity
+{
+    Ok = 0,
+    NotYourTurn,
+    CardNotInDeck,
+    ColorConstraintNotMet
+};
+
+

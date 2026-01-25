@@ -1,5 +1,7 @@
 #include "../inc/CardsGame.h"
 #include "../../../HashMap/MyHashMap/include/Logger.h"
+#include <unordered_map>
+#include <vector>
 
 
 CardsGame_NS::CardsGame::CardsGame(const CardsGame_NS::GameState& _gameState, int _handSize, int _numPlayers, const EventEmitter& _eventEmitter) :
@@ -28,13 +30,20 @@ void CardsGame_NS::CardsGame::dealCards(int8_t numCards)
 
     PlayerId playerId = gameState.nextToPlayId.second;
 
+    std::unordered_map<PlayerId, CardSet> dealtCards;
+
     for(int i = 0; i < numCards; i++)
     {
         Card card = drawnCards[i];
 
         gameState.players[playerId].deck.AddCard(card);
         playerId = (playerId + 1) % numPlayers;
-        eventEmitter.emit(PlayerDealtCards({playerId%2, playerId}, {card}));
+        dealtCards.at(playerId).push_back(card);
+    }
+
+    for(const auto& [pId, cardSet] : dealtCards)
+    {
+        eventEmitter.emit(PlayerDealtCardsEvent({pId%2, pId}, {cardSet}));
     }
 }
 
@@ -58,7 +67,8 @@ ReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
         LOG_INFO("Game result so far: ", gameResult.points[0], " : ", gameResult.points[1]);
         gameState.roundCnt++;
         gameState.players = currRound->roundState.players;
-        gameState.nextToPlayId = currRound->roundResult.winnerId;
+        PlayerId nextToPlayId = (gameState.nextToPlayId.second + 1) % 2;
+        gameState.nextToPlayId = {nextToPlayId%2, nextToPlayId};
         if(gameState.deck.getDeck().size() > 0)
             dealCards(handSize);
 

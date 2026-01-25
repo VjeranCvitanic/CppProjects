@@ -210,14 +210,48 @@ void Logger::LogEv(const PlayerPlayedMoveEvent& e)
     LOG_EVENT("Player ", e.move.playerId, " played card ", Cards::CardToString(e.move.card));
 }
 
-void Logger::LogEv(const PlayerDealtCards& e)
+void Logger::LogEv(const PlayerDealtCardsEvent& e)
 {
     LOG_EVENT("Player ", e.playerId, " was dealt ", e.cards.size(), " cards");
     for(auto& card : e.cards)
         LOG_EVENT(Cards::CardToString(card));
 }
 
-void Logger::LogEv(const RoundDealtCards& e)
+void Logger::LogEv(const StartRoundEvent& e)
 {
-    LOG_EVENT("Round dealt ", e.dealtCards.size(), " cards");
+    LOG_EVENT("Start Round, first to play: ", e.firstToPlayId);
 }
+
+//void Logger::LogEv(const TressetteStartRoundEvent& e);
+void Logger::LogEv(const StartGameEvent& e)
+{
+    LOG_EVENT("Start Game (", e.gameType, "), first to play: ", e.firstToPlayId);
+}
+
+void Logger::LogEv(const StartMatchEvent& e)
+{
+    LOG_EVENT("Start Match, first to play: ", e.firstToPlayId);
+}
+
+void Logger::LogEv(const RoundOver& e)
+{
+    LOG_EVENT("Round over");
+}
+void Logger::LogEv(const GameOver& e)
+{
+    LOG_EVENT("Game over");
+}
+void Logger::LogEv(const MatchOver& e)
+{
+    LOG_EVENT("Match over");
+}
+void Logger::LogEv(const YourTurnEvent& e)
+{
+    LOG_EVENT("Your turn: ", e.playerId);
+}
+void Logger::LogEv(const MoveResponseEvent& e)
+{
+    LOG_EVENT("Move: ", e.moveValidity);
+}
+//void Logger::LogEv(const AcussoEvent& e);
+//void Logger::LogEv(const BriscolaLastRoundEvent& e);

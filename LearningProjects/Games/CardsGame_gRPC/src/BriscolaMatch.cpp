@@ -7,6 +7,11 @@ BriscolaMatch_NS::BriscolaMatch::BriscolaMatch(const CardsMatch_NS::MatchState& 
     CardsMatch_NS::CardsMatch(matchState, _numPlayers, _eventEmitter)
 {
     LOG_DEBUG("ctor");
+    matchResult.score = {
+    { 0, {} },
+    { 1, {} }
+};
+
     startNewGame();
 }
 

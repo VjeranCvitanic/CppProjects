@@ -33,6 +33,7 @@ CardsRound_NS::RoundState::RoundState(fullPlayerId _nextToPlayId, const Players&
 void CardsRound_NS::CardsRound::InitRound()
 {
     logStartRound();
+    eventEmitter.emit(StartRoundEvent(roundState.nextToPlayId));
 }
 
 bool CardsRound_NS::CardsRound::IsFinished()
