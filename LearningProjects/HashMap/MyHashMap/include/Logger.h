@@ -16,7 +16,8 @@
 
 #include <string>
 
-using fullPlayerId = std::pair<int, int>;
+#include "../../CardsGame_gRPC/inc/Types.h"
+#include "../../CardsGame_gRPC/inc/EventSink.h"
 
 inline std::ostream& operator<<(std::ostream& os,
                                 const fullPlayerId& id)
@@ -43,9 +44,11 @@ inline std::ostream& operator<<(std::ostream& os,
 
 #define DRAW(...) Logger::Draw(__VA_ARGS__);
 
+#define LOG_EVENT(...) Logger::EventLog(__VA_ARGS__);
+
 #define LOG_VAR(...) LOG_DEBUG("Variables: ", __VA_ARGS__)//__, #x "=", (x)) //#__VA_ARGS__
 
-class Logger
+class Logger : public EventSink
 {
 public:
     Logger(const Logger&) = delete;
@@ -63,18 +66,24 @@ public:
             return;
         if(level_ >= level)
         {
-            auto now = std::chrono::system_clock::now();
-            std::time_t t = std::chrono::system_clock::to_time_t(now);
-            std::tm tm; 
-            localtime_s(&tm, &t);
-            (*logOut) 
-                << "[" << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << "] "
-                << "[" << level_to_string(level_) << "] "
-                << module << "::"
-                << func;
-                ((*logOut << ": " << msg << ' '), ...);
-                *logOut  << std::endl;
+            doLog(logOut, level_, module, func, msg...);
         }
+    }
+
+    template<typename... T>
+    static void doLog(std::ostream* out, int level_, const char* module, const char* func, const T&... msg)
+    {
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        std::tm tm; 
+        localtime_s(&tm, &t);
+        (*out) 
+            << "[" << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << "] "
+            << "[" << level_to_string(level_) << "] "
+            << module << "::"
+            << func;
+            ((*out << ": " << msg << ' '), ...);
+            *out  << std::endl;
     }
 
     static void Log(int level_, const char* module, const char* func)
@@ -88,13 +97,26 @@ public:
         ((*drawOut << msg << ' '), ...) << std::flush;
     }
 
-    static void logger_setup(const char* logs_dir, const char* draw_dir, int level, bool is_on);
+    template<typename... T>
+    static void EventLog(const T&... msg)
+    {
+        doLog(eventOut, 0, "", "", msg...);
+    }
+
+    static void logger_setup(const char* logs_dir, const char* draw_dir, const char* event_dir, int level, bool is_on);
     static void setLevel(int lvl);
     static void setLogOutput(const char* path);
     static void setDrawOutput(const char* path);
+    static void setEventOutput(const char* file_dir);
     static void setOnOffState(bool is_on);
     static void start();
     static void end();
+    void onEvent(const GameEvent& event);
+    void LogEvent(const GameEvent& event);
+    void LogEv(const PlayerPlayedMoveEvent& e);
+    void LogEv(const PlayerDealtCards& e);
+    void LogEv(const RoundDealtCards& e);
+
 private:
     static std::unique_ptr<Logger> instance;
     static bool is_started;
@@ -104,6 +126,8 @@ private:
     static std::unique_ptr<std::ofstream> logFileStream;
     static std::ostream* drawOut;
     static std::unique_ptr<std::ofstream> drawFileStream;
+    static std::ostream* eventOut;
+    static std::unique_ptr<std::ofstream> eventFileStream;
     static std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
     static std::chrono::time_point<std::chrono::high_resolution_clock> end_time;
 

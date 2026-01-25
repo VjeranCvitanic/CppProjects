@@ -1,73 +1,85 @@
 #include "../inc/CardsGame.h"
 #include "../../../HashMap/MyHashMap/include/Logger.h"
 
-CardsGame::CardsGame(Game::Teams& _teams) :
-    GameState(_teams)
+
+CardsGame_NS::CardsGame::CardsGame(const CardsGame_NS::GameState& _gameState, int _handSize, int _numPlayers, const EventEmitter& _eventEmitter) :
+    gameState(_gameState), handSize(_handSize), numPlayers(_numPlayers), eventEmitter(_eventEmitter)
 {
     LOG_DEBUG("CardsGame ctor");
 }
 
-void CardsGame::Game()
-{
-    LOG_DEBUG("Start game");
-}
-
-GameState::GameState(Game::Teams& _teams)
+CardsGame_NS::GameState::GameState(fullPlayerId _nextToPlayId, const CardsRound_NS::Players& _players) :
+    nextToPlayId(_nextToPlayId), players(_players)
 {
     LOG_DEBUG("GameState ctor");
     deck = Deck(true);
-    teams = _teams;
-    numPlayers = static_cast<NumPlayers>(teams[0].identity.players.size() * 2);
-    LOG_DEBUG("numPlayers: ", numPlayers);
+    roundCnt = 0;
 }
 
-Deck GameState::getDeck()
-{
-    return deck;
-}
-Card GameState::getCard(int8_t pos)
-{
-    return deck.getCard(pos);
-}
-
-void CardsGame::dealCards(int8_t numCards)
+void CardsGame_NS::CardsGame::dealCards(int8_t numCards)
 {
     LOG_DEBUG("Deal cards: ", +numCards);
+    if(gameState.deck.getDeck().size() < numCards)
+    {
+        LOG_ERROR("Deck too small");
+        return;
+    }
     CardSet drawnCards = drawCards(numCards);
 
-    for(int i = currRound.nextToPlayIndex.first; i < numCards + currRound.nextToPlayIndex.first; i++)
+    PlayerId playerId = gameState.nextToPlayId.second;
+
+    for(int i = 0; i < numCards; i++)
     {
         Card card = drawnCards[i];
-        PlayerId playerId = i % numPlayers;
-        
-        currRound.dealtCards.push_back(std::make_tuple(playerId, card));
+
+        gameState.players[playerId].deck.AddCard(card);
+        playerId = (playerId + 1) % numPlayers;
+        eventEmitter.emit(PlayerDealtCards({playerId%2, playerId}, {card}));
     }
 }
 
-CardSet CardsGame::drawCards(int8_t numCards)
+CardSet CardsGame_NS::CardsGame::drawCards(int8_t numCards)
 {
     CardSet drawnCards;
     for(int i = 0; i < numCards; i++)
     {
-        drawnCards.push_back(deck.popCard());
+        drawnCards.push_back(gameState.deck.popCard());
     }
 
     return drawnCards;
 }
 
-void CardsGame::updateGameResult()
+ReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
 {
-    for(auto& t : teams)
+    ReturnValue roundRetVal = currRound->ApplyMove(move);
+    if(roundRetVal == Finish)
     {
-        if(t.identity.teamId == currRound.roundResult.winnerId.second)
+        updateGameResult();
+        LOG_INFO("Game result do far: ", gameResult.points[0], " : ", gameResult.points[1]);
+        gameState.roundCnt++;
+        gameState.players = currRound->roundState.players;
+        gameState.nextToPlayId = currRound->roundResult.winnerId;
+        if(gameState.deck.getDeck().size() > 0)
+            dealCards(handSize);
+
+        if(IsFinished())
         {
-            t.points += currRound.roundResult.totalPoints;
+            LOG_INFO("Game finished");
+            return Finish;
         }
+        startNewRound();
     }
+
+    return Ok;
 }
 
-
-Card GameState::getLastCard() const
+void CardsGame_NS::CardsGame::InitGame()
 {
-    return std::make_tuple(InvalidColor, InvalidNumber);
+    LOG_DEBUG("Game init");
 }
+
+void CardsGame_NS::CardsGame::EndGame()
+{
+    LOG_DEBUG("Game End");
+}
+   

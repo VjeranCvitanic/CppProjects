@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Events.h"
 #include "EventSink.h"
 
@@ -7,7 +9,7 @@ public:
         sinks.push_back(sink);
     }
 
-    void emit(GameEvent event) {
+    void emit(GameEvent event) const {
         for (auto* s : sinks) {
             s->onEvent(event);
         }

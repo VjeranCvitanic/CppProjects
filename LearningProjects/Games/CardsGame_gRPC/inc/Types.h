@@ -107,17 +107,6 @@ struct MoveConstraints
     Color colorToPlay;
 };
 
-namespace Domain
-{
-    using Players = std::vector<PlayerId>;
-
-    struct TeamIdentity
-    {
-        TeamId teamId;
-        Players players;
-    };
-}
-
 enum ReturnValue
 {
     Nok = 0,

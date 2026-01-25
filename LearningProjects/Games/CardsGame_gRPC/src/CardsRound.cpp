@@ -2,8 +2,13 @@
 #include "../inc/Cards.h"
 #include "../../../HashMap/MyHashMap/include/Logger.h"
 
-CardsRound_NS::CardsRound::CardsRound(RoundRules& rules, RoundState& _state, EventEmitter& _eventEmitter) :
-    roundRules(rules), roundState(_state), eventEmitter(_eventEmitter), roundResult()
+CardsRound_NS::CardsRound::CardsRound(RoundRules& rules, const RoundState& _state, int _handSize, int _numPlayers, const EventEmitter& _eventEmitter) :
+    roundRules(rules),
+    roundState(_state),
+    eventEmitter(_eventEmitter),
+    roundResult(),
+    handSize(_handSize),
+    numPlayers(_numPlayers)
 {
     InitRound();
 }
@@ -15,11 +20,14 @@ CardsRound_NS::RoundResult::RoundResult() :
     points(0), winnerId({-1, -1})
 {}
 
-CardsRound_NS::RoundState::RoundState(int _handsize, PlayerId _nextToPlayId, Teams _teams) : 
-    handSize(_handsize), nextToPlayId(_nextToPlayId), firstToPlayId(_nextToPlayId), teams(_teams), numPlayers(teams[0].players.size() * teams.size())
+CardsRound_NS::RoundState::RoundState(fullPlayerId _nextToPlayId, const Players& _players) : 
+    nextToPlayId(_nextToPlayId),
+    firstToPlayId(_nextToPlayId),
+    players(_players),
+    playedMovesInRound({}),
+    moveConstraints({})
 {
-    Moves playedMovesInRound = {};
-    MoveConstraints moveConstraints;
+    LOG_DEBUG("RoundState ctor");
 }
 
 void CardsRound_NS::CardsRound::InitRound()
@@ -29,7 +37,7 @@ void CardsRound_NS::CardsRound::InitRound()
 
 bool CardsRound_NS::CardsRound::IsFinished()
 {
-    if(roundState.playedMovesInRound.size() == roundState.handSize)
+    if(roundState.playedMovesInRound.size() == handSize)
         return true;
     return false;
 }
@@ -37,6 +45,7 @@ bool CardsRound_NS::CardsRound::IsFinished()
 ReturnValue CardsRound_NS::CardsRound::ApplyMove(const Move& move)
 {
     ReturnValue reason;
+
     if(roundRules.IsMoveLegal(move, roundState, reason))
     {
         preMoveSetup();
@@ -64,14 +73,13 @@ void CardsRound_NS::CardsRound::playMove(const Move& move)
 {
     roundState.playedMovesInRound.push_back(move);
 
-    roundState.nextToPlayId = (roundState.nextToPlayId + 1) % roundState.numPlayers;
 }
 
 int8_t CardsRound_NS::CardsRound::HandWinner(const CardSet& playedHand, Card& winnerCard, Color strongColor)
 {
-    if(playedHand.size() != roundState.handSize)
+    if(playedHand.size() != handSize)
     {
-        LOG_ERROR("Invalid playedHand size: ", playedHand.size(), ", handsize: ", roundState.handSize);
+        LOG_ERROR("Invalid playedHand size: ", playedHand.size(), ", handsize: ", handSize);
         winnerCard = Cards::makeCard(InvalidColor, InvalidNumber);
         return -1;
     }
@@ -85,8 +93,9 @@ void CardsRound_NS::CardsRound::EndRound()
     CardSet cards;
 
     Cards::getCardsFromMoves(roundState.playedMovesInRound, cards);
-    PlayerId playerId = (HandWinner(cards, roundWinner, roundState.strongColor) + roundState.nextToPlayId) % roundState.numPlayers;
-    fullPlayerId winnerId = {playerId, playerId % 2};
+    PlayerId nextToPlayId = roundState.nextToPlayId.second;
+    PlayerId playerId = (HandWinner(cards, roundWinner, roundState.strongColor) + nextToPlayId) % numPlayers;
+    fullPlayerId winnerId = {playerId % 2, playerId};
     LOG_DEBUG("winnerId", winnerId);
     roundResult.winnerId = winnerId;
     roundResult.points = CalculateRoundResult();
@@ -109,10 +118,18 @@ Points CardsRound_NS::CardsRound::CalculateRoundResult()
 }
 
 void CardsRound_NS::CardsRound::preMoveSetup()
-{}
+{
+    LOG_DEBUG("");
+}
 
 void CardsRound_NS::CardsRound::postMoveSetup(const Move& move)
 {
+    PlayerId currPlayedId = roundState.nextToPlayId.second;
+    PlayerId nextToPlayId = (currPlayedId + 1) % numPlayers;
+
+    roundState.nextToPlayId = {nextToPlayId % 2, nextToPlayId};
+    roundState.players[currPlayedId].deck.eraseCard(move.card);
+
     GameEvent event = PlayerPlayedMoveEvent(move);
     eventEmitter.emit(event);
 }
@@ -120,18 +137,15 @@ void CardsRound_NS::CardsRound::postMoveSetup(const Move& move)
 void CardsRound_NS::CardsRound::logStartRound()
 {
     LOG_INFO("Round starting");
-    for(auto& t : roundState.teams)
+    for(auto& p : roundState.players)
     {
-        for(auto player : t.players)
-        {
-            LOG_DEBUG("Player ", player.playerId, " hand: ");
-            player.deck.logDeck();
-        }
+        LOG_DEBUG("Player ", p.playerId, " hand: ");
+        p.deck.logDeck();
     }
     LOG_DEBUG("Next to play: ", roundState.nextToPlayId);
 }
 
-int8_t CardsRound_NS::RoundRules::StrongestCard(const CardSet& playedHand, Card& winnerCard, Color strongColor)
+int8_t CardsRound_NS::RoundRules::StrongestCard(const CardSet& playedHand, Card& winnerCard, Color strongColor) const
 {
     if(playedHand.empty())
     {

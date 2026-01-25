@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Types.h"
+#include <vector>
 
 class CardsGame;
 
@@ -13,6 +14,9 @@ public:
     Deck(bool full);
     Deck(int numCards);
 
+    Deck(const Deck& other) : cards(other.cards) {}
+    Deck& operator=(const Deck& other) { cards = other.cards; return *this; }
+
     //getters
     Card getCard(int8_t pos);
     CardSet getDeck() const;
@@ -23,8 +27,6 @@ public:
     void eraseCard(Card card);
     void eraseDeck();
     Card popCard();
-    void InsertByNumber(Card card, const CardsGame* gamePtr);
-    void Sort();
 
     // print & log
     void logDeck();
@@ -32,7 +34,7 @@ public:
 private:
     CardSet cards;
 
-    int8_t findFreeSlot(int* flags);
+    int8_t findFreeSlot(std::vector<int> flags);
     void CreateDeck();
 };
 

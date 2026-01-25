@@ -1,12 +1,15 @@
 #include "../include/Logger.h"
+#include "../../../Games/CardsGame_gRPC/inc/Cards.h"
 
 std::unique_ptr<std::ofstream> Logger::logFileStream;
 std::unique_ptr<std::ofstream> Logger::drawFileStream;
+std::unique_ptr<std::ofstream> Logger::eventFileStream;
 
 bool Logger::is_on = false;
 int Logger::level = INFO;
 std::ostream* Logger::logOut(&std::cout);
 std::ostream* Logger::drawOut(&std::cout);
+std::ostream* Logger::eventOut(&std::cout);
 
 bool Logger::is_started = false;
 std::chrono::time_point<std::chrono::high_resolution_clock> Logger::start_time = {};
@@ -27,14 +30,20 @@ Logger::~Logger()
         drawFileStream->close();
         drawFileStream.reset();
     }
+    if(eventFileStream)
+    {
+        eventFileStream->close();
+        eventFileStream.reset();
+    }
 }
 
 // Class functions
-void Logger::logger_setup(const char* logs_dir, const char* draw_dir, int level, bool is_on)
+void Logger::logger_setup(const char* logs_dir, const char* draw_dir, const char* event_dir, int level, bool is_on)
 {
     Logger::GetInstance().start();
     Logger::GetInstance().setLogOutput(logs_dir);
     Logger::GetInstance().setDrawOutput(draw_dir);
+    Logger::GetInstance().setEventOutput(event_dir);
     Logger::GetInstance().setLevel(level);
     Logger::GetInstance().setOnOffState(is_on);
 }
@@ -114,6 +123,16 @@ void Logger::setDrawOutput(const char* file_dir)
     Draw("\n\nDRAWING STARTED\n");
 }
 
+void Logger::setEventOutput(const char* file_dir)
+{
+    if(!file_dir)
+        return;
+    int nextLog = 1; //getNextLogFile(file_dir)
+    std::string full_filepath = std::string(file_dir) + std::string("event") + std::to_string(nextLog) + ".txt";
+    setOutput(eventOut, eventFileStream, full_filepath);
+    EventLog("\n\nEventLog STARTED\n");
+}
+
 // TODO - timestamp
 int Logger::getNextLogFile(const char* logDir)
 {
@@ -168,4 +187,37 @@ void Logger::flush() {
         logOut->flush();
     if (drawOut)
         drawOut->flush();
+    if(eventOut)
+        eventOut->flush();
+}
+
+void Logger::onEvent(const GameEvent& event)
+{
+	LOG_EVENT("=================================== Event received ===================================");
+    LogEvent(event);
+}
+
+void Logger::LogEvent(const GameEvent& event)
+{
+    std::visit([this](const auto& e)
+    {
+        this->LogEv(e);
+    }, event);
+}
+
+void Logger::LogEv(const PlayerPlayedMoveEvent& e)
+{
+    LOG_EVENT("Player ", e.move.playerId, " played card ", Cards::CardToString(e.move.card));
+}
+
+void Logger::LogEv(const PlayerDealtCards& e)
+{
+    LOG_EVENT("Player ", e.playerId, " was dealt ", e.cards.size(), " cards");
+    for(auto& card : e.cards)
+        LOG_EVENT(Cards::CardToString(card));
+}
+
+void Logger::LogEv(const RoundDealtCards& e)
+{
+    LOG_EVENT("Round dealt ", e.dealtCards.size(), " cards");
 }

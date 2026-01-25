@@ -19,7 +19,10 @@ add_library(card_core
     src/Cards.cpp
     src/Deck.cpp
     src/CardsRound.cpp
+    src/CardsGame.cpp
     src/BriscolaRound.cpp
+    src/BriscolaGame.cpp
+    src/BriscolaRules.cpp
 )
 
 target_include_directories(card_core PUBLIC src)

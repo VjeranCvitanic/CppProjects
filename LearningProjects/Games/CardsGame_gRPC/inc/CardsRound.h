@@ -15,14 +15,6 @@ namespace CardsRound_NS
 
     typedef std::vector<PlayerState> Players;
 
-    struct TeamState
-    {
-        Domain::TeamIdentity identity;
-        Players players;
-    };
-
-    typedef std::vector<TeamState> Teams;
-
     struct RoundResult
     {
         RoundResult();
@@ -33,45 +25,46 @@ namespace CardsRound_NS
 
     struct RoundState
     {
-        RoundState(int _handsize, PlayerId _nextToPlayId, Teams _teams);
+        RoundState(fullPlayerId _nextToPlayId, const Players& _players);
 
-        Teams teams;
-        Moves playedMovesInRound;        
+        Players players;
+        Moves playedMovesInRound;
         MoveConstraints moveConstraints;
 
         Color strongColor;
 
-        int handSize;
-        int numPlayers;
-        PlayerId nextToPlayId;
-        PlayerId firstToPlayId;
+        fullPlayerId nextToPlayId;
+        fullPlayerId firstToPlayId;
     };
 
     class RoundRules
     {
     public:
         RoundRules();
-        virtual int8_t getNumberStrength(Number number) = 0;
-        virtual Points getNumberValue(Number number) = 0;
-        virtual Card StrongerCard(const Card& card1, const Card& card2, Color strongColor) = 0;
-        virtual bool IsMoveLegal(const Move&, const RoundState& state, ReturnValue& reason) = 0;
+        virtual int8_t getNumberStrength(Number number) const = 0;
+        virtual Points getNumberValue(Number number) const = 0;
+        virtual Card StrongerCard(const Card& card1, const Card& card2, Color strongColor) const = 0;
+        virtual bool IsMoveLegal(const Move&, const RoundState& state, ReturnValue& reason) const = 0;
 
-        int8_t StrongestCard(const CardSet& playedHand, Card& winnerCard, Color strongColor);
+        int8_t StrongestCard(const CardSet& playedHand, Card& winnerCard, Color strongColor) const;
     };
 
     class CardsRound
     {
     public:
-        explicit CardsRound(RoundRules& rules, RoundState& state, EventEmitter& _eventEmitter);
+        explicit CardsRound(RoundRules& rules, const RoundState& state, int _handSize, int _numPlayers, const EventEmitter& _eventEmitter);
         virtual ~CardsRound() = default;
 
         RoundState roundState;
         RoundResult roundResult;
 
+        int handSize;
+        int numPlayers;
+
         ReturnValue ApplyMove(const Move&);
     protected:
-        RoundRules& roundRules;
-        EventEmitter& eventEmitter;
+        const RoundRules& roundRules;
+        const EventEmitter& eventEmitter;
 
         void logStartRound();
 

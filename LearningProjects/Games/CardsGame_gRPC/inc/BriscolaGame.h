@@ -1,24 +1,38 @@
 #pragma once
 
+#include "Cards.h"
 #include "CardsGame.h"
-#include "BriscolaRound.h"
- 
-#define HandSize 4
+#include "Types.h"
 
-class BriscolaGame : public CardsGame
+namespace BriscolaGame_NS
 {
-public:
-    BriscolaGame(Game::Teams&);
+    #define HandSize 4
+    class BriscolaGameState : public CardsGame_NS::GameState
+    {
+    public:
+        BriscolaGameState(fullPlayerId _nextToPlayId, const CardsRound_NS::Players& _players) :
+            strongColor(Cards::getColor(deck.getCard(0))),
+            CardsGame_NS::GameState(_nextToPlayId, _players)
+        {}
+        Color strongColor;
+    };
 
-    void Game() override;
+    class BriscolaGame : public CardsGame_NS::CardsGame
+    {
+    public:
+        BriscolaGame(const BriscolaGameState& gameState, int _numPlayers, const EventEmitter& _eventEmitter);
 
-    // getters
-    Card getLastCard() const override;
+        // getters
+        Card getLastCard() const;
+    protected:
+        Color strongColor;
+        Card lastCard;
 
-protected:
-    Color strongColor;
-    Card lastCard;
+        Color getStrongColor() const;
+        void updateGameResult() override;
 
-    BriscolaRound currRound;
-    Color getStrongColor() const;
-};
+        bool IsFinished() override;
+
+        void startNewRound() override;
+    };
+}

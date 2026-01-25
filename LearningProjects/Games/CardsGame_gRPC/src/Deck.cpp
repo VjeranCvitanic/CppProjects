@@ -1,17 +1,21 @@
 #include "../inc/Deck.h"
 #include "../inc/Cards.h"
 #include "../../../Hashmap/MyHashMap/include/Logger.h"
+#include <vector>
 
 Deck::Deck()
 {
+    LOG_DEBUG("ctor");
     cards = {};
 }
 
 Deck::Deck(bool full)
 {
+    LOG_DEBUG("ctor 2");
     if(full)
     {
         CreateDeck();
+        logDeck();
     }
     else {
         cards = {};
@@ -20,6 +24,7 @@ Deck::Deck(bool full)
 
 Deck::Deck(int numCards)
 {
+    LOG_DEBUG("ctor 3");
     for(int i = 0; i < numCards; i++)
     {
         cards.push_back(Cards::makeCard(static_cast<Color>(rand() % 4), static_cast<Number>(rand() % 10 + 1)));
@@ -36,7 +41,7 @@ Card Deck::getCard(int8_t pos)
     return cards[pos];
 }
 
-int8_t Deck::findFreeSlot(int* flags)
+int8_t Deck::findFreeSlot(std::vector<int> flags)
 {
     int randNum = rand() % DECK_SIZE;
 
@@ -52,7 +57,7 @@ void Deck::CreateDeck()
 {
     LOG_DEBUG("Creating deck");
     cards.resize(DECK_SIZE);
-    int* flags = new int[DECK_SIZE];
+    std::vector<int> flags(DECK_SIZE, 0);
     for (int c = Spade; c < InvalidColor; c++)
     {
         for (int n = Asso; n < InvalidNumber; n++)
@@ -103,36 +108,5 @@ void Deck::AddCard(Card card)
     cards.push_back(card);
 }
 
-void Deck::Sort()
-{
-    std::vector<Deck> ByColor;
-    ByColor.resize(4);
-
-    for(auto& card : cards)
-    {
-        ByColor[Cards::getColor(card)].AddCard(card);//InsertByNumber(card);
-    }
-
-    cards.clear();
-
-    for(auto& h : ByColor)
-        cards.insert(cards.end(), h.cards.begin(), h.cards.end());
-}
-
-/*void Deck::InsertByNumber(Card card, const CardsGame* game)
-{
-    auto it = cards.begin();
-
-    for (; it != cards.end(); ++it)
-    {
-        if (game->getNumberStrength(Cards::getNumber(*it)) >
-            game->getNumberStrength(Cards::getNumber(card)))
-        {
-            break;
-        }
-    }
-
-    cards.insert(it, card);
-}*/
 
 
