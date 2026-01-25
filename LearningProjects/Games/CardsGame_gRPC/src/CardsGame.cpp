@@ -55,7 +55,7 @@ ReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
     if(roundRetVal == Finish)
     {
         updateGameResult();
-        LOG_INFO("Game result do far: ", gameResult.points[0], " : ", gameResult.points[1]);
+        LOG_INFO("Game result so far: ", gameResult.points[0], " : ", gameResult.points[1]);
         gameState.roundCnt++;
         gameState.players = currRound->roundState.players;
         gameState.nextToPlayId = currRound->roundResult.winnerId;
@@ -65,6 +65,7 @@ ReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
         if(IsFinished())
         {
             LOG_INFO("Game finished");
+            EndGame();
             return Finish;
         }
         startNewRound();
@@ -81,5 +82,11 @@ void CardsGame_NS::CardsGame::InitGame()
 void CardsGame_NS::CardsGame::EndGame()
 {
     LOG_DEBUG("Game End");
+
+    if(gameResult.points.at(0).punta > gameResult.points.at(1).punta)
+        gameResult.winnerId = 0;
+    else
+        gameResult.winnerId = 1;
+    
 }
    

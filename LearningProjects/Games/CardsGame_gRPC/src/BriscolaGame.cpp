@@ -25,8 +25,8 @@ BriscolaGame_NS::BriscolaGame::BriscolaGame(const BriscolaGame_NS::BriscolaGameS
 
 void BriscolaGame_NS::BriscolaGame::updateGameResult()
 {
-    gameResult.points[currRound->roundResult.winnerId.second] += currRound->roundResult.points;
-    gameResult.winnerId = currRound->roundResult.winnerId;
+    gameResult.points[currRound->roundResult.winnerId.first] += currRound->roundResult.points; // team points
+    gameResult.winnerId = currRound->roundResult.winnerId.first;
 }
 
 bool BriscolaGame_NS::BriscolaGame::IsFinished()
@@ -42,7 +42,6 @@ void BriscolaGame_NS::BriscolaGame::startNewRound()
 {
     BriscolaRound_NS::BriscolaRoundState roundState(strongColor, gameState.nextToPlayId, gameState.players);
     currRound = std::make_unique<BriscolaRound_NS::BriscolaRound>(
-        /* whatever state BriscolaRound needs */
         roundState,
         handSize,
         numPlayers,

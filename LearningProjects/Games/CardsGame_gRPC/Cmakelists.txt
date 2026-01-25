@@ -20,8 +20,10 @@ add_library(card_core
     src/Deck.cpp
     src/CardsRound.cpp
     src/CardsGame.cpp
+    src/CardsMatch.cpp
     src/BriscolaRound.cpp
     src/BriscolaGame.cpp
+    src/BriscolaMatch.cpp
     src/BriscolaRules.cpp
 )
 

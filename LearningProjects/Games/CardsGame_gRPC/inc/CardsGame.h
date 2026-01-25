@@ -12,18 +12,17 @@ namespace CardsGame_NS
     struct GameResult
     {
         GameResult() :
-            winnerId({-1, -1}),
+            winnerId(-1),
             points(0)
         {}
 
-        fullPlayerId winnerId;
+        PlayerId winnerId;
         std::unordered_map<TeamId, Points> points;
     };
 
     struct GameState
     {
         GameState(fullPlayerId _nextToPlayId, const CardsRound_NS::Players& _players);
-        GameState(const GameState& other) = default;
 
         CardsRound_NS::Players players;
         Deck deck;

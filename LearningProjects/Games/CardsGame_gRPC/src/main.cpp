@@ -1,5 +1,6 @@
 #include <iostream>
-#include "../inc/BriscolaGame.h"
+#include"../inc/CardsMatch.h"
+#include "../inc/BriscolaMatch.h"
 #include "../inc/Cards.h"
 #include "../../../HashMap/MyHashMap/include/Logger.h"
 
@@ -10,18 +11,14 @@ int main()
 {
     Logger::logger_setup("./out/tournament/logs/", nullptr, "./out/event/logs/", DEBUG, true);
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    std::cout << "hello world";
 
     EventEmitter eventEmitter;
     eventEmitter.subscribe(&Logger::GetInstance());
 
-    CardsRound_NS::PlayerState p0 = {.playerId = {0, 0}, .deck = {}};
-    CardsRound_NS::PlayerState p1 = {.playerId = {1, 1}, .deck = {}};
+    CardsMatch_NS::Players players = {{0, 0}, {1, 1}};
 
-    CardsRound_NS::Players players = {p0, p1};
-
-    BriscolaGame_NS::BriscolaGameState gameState({0, 0}, players);
-    BriscolaGame_NS::BriscolaGame game(gameState, 2, eventEmitter);
+    CardsMatch_NS::MatchState matchState({0, 0}, players);
+    BriscolaMatch_NS::BriscolaMatch match(matchState, 2, eventEmitter);
 
     Move move;
     fullPlayerId playerId = {0, 0};
@@ -30,7 +27,7 @@ int main()
         parseInput(move, playerId);
         playerId.first = (playerId.first + 1) % 2;
         playerId.second = (playerId.second + 1) % 2;
-    }while(game.ApplyMove(move) != Finish);
+    }while(match.ApplyMove(move) != Finish);
 }
 
 

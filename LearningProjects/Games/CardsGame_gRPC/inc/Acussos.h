@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Types.h"
-#include "Deck.h"
+#include <string>
 
 namespace Acussos
 {
