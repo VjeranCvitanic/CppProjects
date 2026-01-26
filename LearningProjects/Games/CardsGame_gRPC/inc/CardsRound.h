@@ -3,6 +3,7 @@
 #include "Deck.h"
 #include "Types.h"
 #include "Points.h"
+#include "RoundResult.h"
 #include "EventEmitter.h"
 
 namespace CardsRound_NS
@@ -14,14 +15,6 @@ namespace CardsRound_NS
     };
 
     typedef std::vector<PlayerState> Players;
-
-    struct RoundResult
-    {
-        RoundResult();
-
-        fullPlayerId winnerId;
-        Points points;
-    };
 
     struct RoundState
     {
@@ -44,7 +37,7 @@ namespace CardsRound_NS
         virtual int8_t getNumberStrength(Number number) const = 0;
         virtual Points getNumberValue(Number number) const = 0;
         virtual Card StrongerCard(const Card& card1, const Card& card2, Color strongColor) const = 0;
-        virtual bool IsMoveLegal(const Move&, const RoundState& state, ReturnValue& reason) const = 0;
+        virtual bool IsMoveLegal(const Move&, const RoundState& state, MoveReturnValue& reason) const = 0;
 
         int8_t StrongestCard(const CardSet& playedHand, Card& winnerCard, Color strongColor) const;
     };
@@ -61,7 +54,7 @@ namespace CardsRound_NS
         int handSize;
         int numPlayers;
 
-        ReturnValue ApplyMove(const Move&);
+        MoveReturnValue ApplyMove(const Move&);
     protected:
         const RoundRules& roundRules;
         const EventEmitter& eventEmitter;
@@ -79,6 +72,8 @@ namespace CardsRound_NS
 
         virtual void preMoveSetup();
         virtual void postMoveSetup(const Move&);
+        void emitNextYoutTurnEvent();
+        void emitMoveRspEvent(const Move& move, MoveReturnValue moveValidity);
     private:
     };
 }

@@ -3,23 +3,11 @@
 #include "CardsRound.h"
 #include "Deck.h"
 #include "Types.h"
-#include "Points.h"
 #include "EventEmitter.h"
-#include <unordered_map>
+#include "GameResult.h"
 
 namespace CardsGame_NS
 {
-    struct GameResult
-    {
-        GameResult() :
-            winnerId(-1),
-            points(0)
-        {}
-
-        PlayerId winnerId;
-        std::unordered_map<TeamId, Points> points;
-    };
-
     struct GameState
     {
         GameState(fullPlayerId _nextToPlayId, const CardsRound_NS::Players& _players);
@@ -40,7 +28,7 @@ namespace CardsGame_NS
         GameResult gameResult;
         std::unique_ptr<CardsRound_NS::CardsRound> currRound;
 
-        ReturnValue ApplyMove(const Move&);
+        MoveReturnValue ApplyMove(const Move&);
     protected:
         const EventEmitter& eventEmitter;
         int handSize;

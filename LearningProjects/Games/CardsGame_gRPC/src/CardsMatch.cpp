@@ -13,9 +13,9 @@ CardsMatch_NS::MatchState::MatchState(fullPlayerId _nextToStartId, const Players
     LOG_DEBUG("ctor");
 }
 
-ReturnValue CardsMatch_NS::CardsMatch::ApplyMove(const Move& move)
+MoveReturnValue CardsMatch_NS::CardsMatch::ApplyMove(const Move& move)
 {
-    ReturnValue roundRetVal = currGame->ApplyMove(move);
+    MoveReturnValue roundRetVal = currGame->ApplyMove(move);
     if(roundRetVal == Finish)
     {
         updateMatchResult();
@@ -42,5 +42,7 @@ ReturnValue CardsMatch_NS::CardsMatch::ApplyMove(const Move& move)
 
 void CardsMatch_NS::CardsMatch::EndMatch()
 {
-
+    LOG_INFO("End match");
+    eventEmitter.emit(MatchOverEvent(std::move(matchResult)));
 }
+

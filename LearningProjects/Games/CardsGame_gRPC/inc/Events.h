@@ -2,47 +2,10 @@
 
 #include <variant>
 #include "Types.h"
-#include "Points.h"
+#include "RoundResult.h"
+#include "GameResult.h"
+#include "MatchResult.h"
 
-/* fwd declares*/
-struct RoundResult
-{
-    RoundResult();
-
-    fullPlayerId winnerId;
-    Points points;
-};
-
-struct GameResult
-{
-    GameResult() :
-        winnerId(-1),
-        points(0)
-    {}
-
-    PlayerId winnerId;
-    std::unordered_map<TeamId, Points> points;
-};
-
-union Score
-{
-    Points points;
-    int wonGames;
-    Score() : points(0) {}
-};
-
-typedef std::vector<fullPlayerId> Players;
-
-struct MatchResult
-{
-    MatchResult() :
-        winnerId(-1),
-        score(0)
-    {}
-
-    TeamId winnerId;
-    std::unordered_map<TeamId, Score> score;
-};
 /* end fwd declares */
 
 struct PrivateEvent
@@ -92,7 +55,6 @@ struct StartRoundEvent : BroadcastEvent
 struct StartGameEvent : BroadcastEvent
 {
     fullPlayerId firstToPlayId;
-    GameType gameType;
 
     explicit StartGameEvent(fullPlayerId pid)
         : firstToPlayId(pid) {}
@@ -101,37 +63,39 @@ struct StartGameEvent : BroadcastEvent
 struct StartMatchEvent : BroadcastEvent
 {
     fullPlayerId firstToPlayId;
+    GameType gameType;
 
-    explicit StartMatchEvent(fullPlayerId pid)
-        : firstToPlayId(pid) {}
+    explicit StartMatchEvent(fullPlayerId pid, GameType _gameType)
+        : firstToPlayId(pid),
+          gameType(_gameType)
+        {}
 };
 
-struct RoundOver : BroadcastEvent
+struct RoundOverEvent : BroadcastEvent
 {
-    RoundResult roundResult;
+    CardsRound_NS::RoundResult roundResult;
 
-    explicit RoundOver(RoundResult result)
+    explicit RoundOverEvent(CardsRound_NS::RoundResult result)
         : roundResult(std::move(result)) {}
 };
 
 
-struct GameOver : BroadcastEvent
+struct GameOverEvent : BroadcastEvent
 {
-    GameResult gameResult;
+    CardsGame_NS::GameResult gameResult;
 
-    explicit GameOver(GameResult result)
+    explicit GameOverEvent(CardsGame_NS::GameResult result)
         : gameResult(std::move(result)) {}
 };
 
 
-struct MatchOver : BroadcastEvent
+struct MatchOverEvent : BroadcastEvent
 {
-    MatchResult matchResult;
+    CardsMatch_NS::MatchResult matchResult;
 
-    explicit MatchOver(MatchResult result)
+    explicit MatchOverEvent(CardsMatch_NS::MatchResult result)
         : matchResult(std::move(result)) {}
 };
-
 
 
 struct YourTurnEvent : PrivateEvent
@@ -158,9 +122,9 @@ struct MoveResponseEvent : PrivateEvent
 {
     Move move;
 
-    MoveValidity moveValidity;
+    MoveReturnValue moveValidity;
 
-    MoveResponseEvent(Move m, MoveValidity validity)
+    MoveResponseEvent(Move m, MoveReturnValue validity)
         : move(std::move(m))
         , moveValidity(validity)
     {}
@@ -184,13 +148,16 @@ struct BriscolaLastRoundEvent : TeamEvent
     fullPlayerId receiverPlayerId;
     fullPlayerId senderTeammatePlayerId;
     CardSet senderTeammateHand;
+    Points teamPoints;
 
     BriscolaLastRoundEvent(fullPlayerId receiver,
                            fullPlayerId sender,
-                           CardSet hand)
+                           CardSet hand,
+                           Points pts)
         : receiverPlayerId(receiver)
         , senderTeammatePlayerId(sender)
         , senderTeammateHand(std::move(hand))
+        , teamPoints(pts)
     {}
 };
 
@@ -212,11 +179,11 @@ using GameEvent = std::variant<
 //    TressetteStartRoundEvent,
     StartGameEvent,
     StartMatchEvent,
-    RoundOver,
-    GameOver,
-    MatchOver,
+    RoundOverEvent,
+    GameOverEvent,
+    MatchOverEvent,
     YourTurnEvent,
-    MoveResponseEvent
+    MoveResponseEvent,
 //    AcussoEvent,
-//    BriscolaLastRoundEvent
+    BriscolaLastRoundEvent
 >;

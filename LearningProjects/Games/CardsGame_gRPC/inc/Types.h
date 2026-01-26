@@ -107,14 +107,13 @@ struct MoveConstraints
     Color colorToPlay;
 };
 
-enum ReturnValue
+enum MoveReturnValue
 {
-    Nok = 0,
-    Ok,
+    Ok = 0,
     Finish,
     NotYourTurn,
     CardNotInHand,
-    ColorConstraint
+    ColorConstraintNotMet
 };
 
 enum EventVisibility
@@ -123,13 +122,3 @@ enum EventVisibility
     Teammate = 1,
     Broadcast
 };
-
-enum class MoveValidity
-{
-    Ok = 0,
-    NotYourTurn,
-    CardNotInDeck,
-    ColorConstraintNotMet
-};
-
-

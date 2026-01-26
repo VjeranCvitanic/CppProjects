@@ -23,7 +23,7 @@ public:
                       Color strongColor) const override;
     bool IsMoveLegal(const Move&,
                      const CardsRound_NS::RoundState& state,
-                     ReturnValue& reason) const override;
+                     MoveReturnValue& reason) const override;
 
 private:
     BriscolaRules() = default; // private ctor

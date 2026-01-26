@@ -40,6 +40,15 @@ bool BriscolaGame_NS::BriscolaGame::IsFinished()
 
 void BriscolaGame_NS::BriscolaGame::startNewRound()
 {
+    if(numPlayers == Four && gameState.roundCnt == DECK_SIZE/handSize)
+    {
+        for(auto& p : gameState.players)
+        {
+            fullPlayerId teammateId = {p.playerId.first, (p.playerId.second + 1) % 2};
+            eventEmitter.emit(BriscolaLastRoundEvent(p.playerId, teammateId, gameState.players[teammateId.second].deck.getDeck(), gameResult.points[p.playerId.first]));
+        }
+    }
+
     BriscolaRound_NS::BriscolaRoundState roundState(strongColor, gameState.nextToPlayId, gameState.players);
     currRound = std::make_unique<BriscolaRound_NS::BriscolaRound>(
         roundState,

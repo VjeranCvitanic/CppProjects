@@ -11,7 +11,7 @@ BriscolaMatch_NS::BriscolaMatch::BriscolaMatch(const CardsMatch_NS::MatchState& 
     { 0, {} },
     { 1, {} }
 };
-
+    InitMatch();
     startNewGame();
 }
 
@@ -48,4 +48,10 @@ bool BriscolaMatch_NS::BriscolaMatch::IsFinished()
     }
 
     return false;
+}
+
+void BriscolaMatch_NS::BriscolaMatch::InitMatch()
+{
+    LOG_INFO("Start match");
+    eventEmitter.emit(StartMatchEvent(matchState.nextToStartId, BriscolaGame));
 }

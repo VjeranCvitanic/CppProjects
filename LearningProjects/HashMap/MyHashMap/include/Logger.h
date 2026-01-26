@@ -119,9 +119,9 @@ public:
     void LogEv(const TressetteStartRoundEvent& e);
     void LogEv(const StartGameEvent& e);
     void LogEv(const StartMatchEvent& e);
-    void LogEv(const RoundOver& e);
-    void LogEv(const GameOver& e);
-    void LogEv(const MatchOver& e);
+    void LogEv(const RoundOverEvent& e);
+    void LogEv(const GameOverEvent& e);
+    void LogEv(const MatchOverEvent& e);
     void LogEv(const YourTurnEvent& e);
     void LogEv(const MoveResponseEvent& e);
     void LogEv(const AcussoEvent& e);
@@ -151,18 +151,20 @@ private:
     void flush();
 };
 
-inline std::ostream& operator<<(std::ostream& os, MoveValidity v)
+inline std::ostream& operator<<(std::ostream& os, MoveReturnValue v)
 {
     switch (v)
     {
-        case MoveValidity::Ok:
+        case MoveReturnValue::Ok:
             return os << "ok";
-        case MoveValidity::NotYourTurn:
+        case MoveReturnValue::NotYourTurn:
             return os << "NotYourTurn";
-        case MoveValidity::CardNotInDeck:
+        case MoveReturnValue::CardNotInHand:
             return os << "CardNotInDeck";
-        case MoveValidity::ColorConstraintNotMet:
+        case MoveReturnValue::ColorConstraintNotMet:
             return os << "ColorConstraintNotMet";
+        case MoveReturnValue::Finish:
+            return os << "Finish";
     }
     return os << "UnknownMoveValidity";
 }

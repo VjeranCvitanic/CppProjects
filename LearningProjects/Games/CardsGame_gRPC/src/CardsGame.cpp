@@ -8,6 +8,7 @@ CardsGame_NS::CardsGame::CardsGame(const CardsGame_NS::GameState& _gameState, in
     gameState(_gameState), handSize(_handSize), numPlayers(_numPlayers), eventEmitter(_eventEmitter)
 {
     LOG_DEBUG("CardsGame ctor");
+    InitGame();
 }
 
 CardsGame_NS::GameState::GameState(fullPlayerId _nextToPlayId, const CardsRound_NS::Players& _players) :
@@ -30,7 +31,8 @@ void CardsGame_NS::CardsGame::dealCards(int8_t numCards)
 
     PlayerId playerId = gameState.nextToPlayId.second;
 
-    std::unordered_map<PlayerId, CardSet> dealtCards;
+    std::vector<CardSet> dealtCards;
+    dealtCards.resize(numPlayers);
 
     for(int i = 0; i < numCards; i++)
     {
@@ -38,12 +40,12 @@ void CardsGame_NS::CardsGame::dealCards(int8_t numCards)
 
         gameState.players[playerId].deck.AddCard(card);
         playerId = (playerId + 1) % numPlayers;
-        dealtCards.at(playerId).push_back(card);
+        dealtCards[playerId].push_back(card);
     }
 
-    for(const auto& [pId, cardSet] : dealtCards)
+    for(int playerId = 0; playerId < numPlayers; playerId++)
     {
-        eventEmitter.emit(PlayerDealtCardsEvent({pId%2, pId}, {cardSet}));
+        eventEmitter.emit(PlayerDealtCardsEvent({playerId%2, playerId}, {dealtCards[playerId]}));
     }
 }
 
@@ -58,9 +60,9 @@ CardSet CardsGame_NS::CardsGame::drawCards(int8_t numCards)
     return drawnCards;
 }
 
-ReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
+MoveReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
 {
-    ReturnValue roundRetVal = currRound->ApplyMove(move);
+    MoveReturnValue roundRetVal = currRound->ApplyMove(move);
     if(roundRetVal == Finish)
     {
         updateGameResult();
@@ -74,7 +76,6 @@ ReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
 
         if(IsFinished())
         {
-            LOG_INFO("Game finished");
             EndGame();
             return Finish;
         }
@@ -86,17 +87,19 @@ ReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
 
 void CardsGame_NS::CardsGame::InitGame()
 {
-    LOG_DEBUG("Game init");
+    LOG_INFO("Game init");
+    eventEmitter.emit(StartGameEvent(gameState.nextToPlayId));
 }
 
 void CardsGame_NS::CardsGame::EndGame()
 {
-    LOG_DEBUG("Game End");
+    LOG_INFO("Game End");
 
     if(gameResult.points.at(0).punta > gameResult.points.at(1).punta)
         gameResult.winnerId = 0;
     else
         gameResult.winnerId = 1;
-    
+
+    eventEmitter.emit(GameOverEvent(std::move(gameResult)));
 }
    

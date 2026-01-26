@@ -3,29 +3,11 @@
 #include "CardsGame.h"
 #include "EventEmitter.h"
 #include "Types.h"
-#include "Points.h"
+#include "MatchResult.h"
 
 namespace CardsMatch_NS
 {
-    union Score
-    {
-        Points points;
-        int wonGames;
-        Score() : points(0) {}
-    };
-
     typedef std::vector<fullPlayerId> Players;
-
-    struct MatchResult
-    {
-        MatchResult() :
-            winnerId(-1),
-            score(0)
-        {}
-
-        TeamId winnerId;
-        std::unordered_map<TeamId, Score> score;
-    };
 
     struct MatchState
     {
@@ -42,7 +24,7 @@ namespace CardsMatch_NS
         CardsMatch(const MatchState& matchState, int numPlayers, const EventEmitter& eventEmitter);
         virtual bool IsFinished() = 0;
         virtual void startNewGame() = 0;
-        ReturnValue ApplyMove(const Move&);
+        MoveReturnValue ApplyMove(const Move&);
     protected:
         MatchState matchState;
         MatchResult matchResult;
@@ -50,6 +32,7 @@ namespace CardsMatch_NS
         std::unique_ptr<CardsGame_NS::CardsGame> currGame;
         int numPlayers;
 
+        virtual void InitMatch() = 0;
         virtual void updateMatchResult() = 0;
         void EndMatch();
     };

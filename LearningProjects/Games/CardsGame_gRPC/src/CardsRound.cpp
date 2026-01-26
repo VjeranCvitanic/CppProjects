@@ -34,6 +34,7 @@ void CardsRound_NS::CardsRound::InitRound()
 {
     logStartRound();
     eventEmitter.emit(StartRoundEvent(roundState.nextToPlayId));
+    emitNextYoutTurnEvent();
 }
 
 bool CardsRound_NS::CardsRound::IsFinished()
@@ -43,9 +44,9 @@ bool CardsRound_NS::CardsRound::IsFinished()
     return false;
 }
 
-ReturnValue CardsRound_NS::CardsRound::ApplyMove(const Move& move)
+MoveReturnValue CardsRound_NS::CardsRound::ApplyMove(const Move& move)
 {
-    ReturnValue reason;
+    MoveReturnValue reason;
 
     if(roundRules.IsMoveLegal(move, roundState, reason))
     {
@@ -60,20 +61,33 @@ ReturnValue CardsRound_NS::CardsRound::ApplyMove(const Move& move)
         }
         else
         {
+            emitNextYoutTurnEvent();
             return Ok;
         }
     }
     else
     {
         LOG_DEBUG("Move not valid");
-        return Nok;
+        emitMoveRspEvent(move, reason);
+        return reason;
     }
 }
 
 void CardsRound_NS::CardsRound::playMove(const Move& move)
 {
     roundState.playedMovesInRound.push_back(move);
+}
 
+void CardsRound_NS::CardsRound::emitNextYoutTurnEvent()
+{
+    eventEmitter.emit(YourTurnEvent(roundState.nextToPlayId,
+                roundState.players[roundState.nextToPlayId.second].deck.getDeck(), 
+                roundState.playedMovesInRound, roundState.strongColor));
+}
+
+void CardsRound_NS::CardsRound::emitMoveRspEvent(const Move& move, MoveReturnValue moveValidity)
+{
+    eventEmitter.emit(MoveResponseEvent(move, moveValidity));
 }
 
 int8_t CardsRound_NS::CardsRound::HandWinner(const CardSet& playedHand, Card& winnerCard, Color strongColor)
@@ -100,6 +114,8 @@ void CardsRound_NS::CardsRound::EndRound()
     LOG_DEBUG("winnerId", winnerId);
     roundResult.winnerId = winnerId;
     roundResult.points = CalculateRoundResult();
+
+    eventEmitter.emit(RoundOverEvent(std::move(roundResult)));
 
     LOG_INFO("Round winner card: ", Cards::CardToString(roundWinner), "player: ", roundResult.winnerId, "round points: ", roundResult.points);
 }
@@ -131,6 +147,7 @@ void CardsRound_NS::CardsRound::postMoveSetup(const Move& move)
     roundState.nextToPlayId = {nextToPlayId % 2, nextToPlayId};
     roundState.players[currPlayedId].deck.eraseCard(move.card);
 
+    emitMoveRspEvent(move, MoveReturnValue::Ok);
     GameEvent event = PlayerPlayedMoveEvent(move);
     eventEmitter.emit(event);
 }

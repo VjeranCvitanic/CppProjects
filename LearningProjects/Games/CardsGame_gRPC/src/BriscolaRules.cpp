@@ -2,7 +2,7 @@
 #include "../../../HashMap/MyHashMap/include/Logger.h"
 #include "../inc/Cards.h"
 
-bool BriscolaRules::IsMoveLegal(const Move& move, const CardsRound_NS::RoundState& state, ReturnValue& reason) const
+bool BriscolaRules::IsMoveLegal(const Move& move, const CardsRound_NS::RoundState& state, MoveReturnValue& reason) const
 {
     if(move.playerId != state.nextToPlayId)
     {

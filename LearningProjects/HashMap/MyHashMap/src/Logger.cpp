@@ -225,23 +225,23 @@ void Logger::LogEv(const StartRoundEvent& e)
 //void Logger::LogEv(const TressetteStartRoundEvent& e);
 void Logger::LogEv(const StartGameEvent& e)
 {
-    LOG_EVENT("Start Game (", e.gameType, "), first to play: ", e.firstToPlayId);
+    LOG_EVENT("Start Game, first to play: ", e.firstToPlayId);
 }
 
 void Logger::LogEv(const StartMatchEvent& e)
 {
-    LOG_EVENT("Start Match, first to play: ", e.firstToPlayId);
+    LOG_EVENT("Start Match (", e.gameType, "), first to play: ", e.firstToPlayId);
 }
 
-void Logger::LogEv(const RoundOver& e)
+void Logger::LogEv(const RoundOverEvent& e)
 {
     LOG_EVENT("Round over");
 }
-void Logger::LogEv(const GameOver& e)
+void Logger::LogEv(const GameOverEvent& e)
 {
     LOG_EVENT("Game over");
 }
-void Logger::LogEv(const MatchOver& e)
+void Logger::LogEv(const MatchOverEvent& e)
 {
     LOG_EVENT("Match over");
 }
@@ -254,4 +254,12 @@ void Logger::LogEv(const MoveResponseEvent& e)
     LOG_EVENT("Move: ", e.moveValidity);
 }
 //void Logger::LogEv(const AcussoEvent& e);
-//void Logger::LogEv(const BriscolaLastRoundEvent& e);
+void Logger::LogEv(const BriscolaLastRoundEvent& e)
+{
+    LOG_EVENT("BriscolaLastRoundEvent: receiver: ", e.receiverPlayerId,
+            ", teammate: ", e.senderTeammatePlayerId,
+            ", team points: ", e.teamPoints,
+            ", teammateHand: ");
+    Cards::logCards(e.senderTeammateHand);
+
+}
