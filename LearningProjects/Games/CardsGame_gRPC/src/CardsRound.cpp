@@ -17,7 +17,7 @@ CardsRound_NS::RoundRules::RoundRules()
 {}
 
 CardsRound_NS::RoundResult::RoundResult() : 
-    points(0), winnerId({-1, -1})
+    points(0), winnerId({-1, -1}), bastaCalled({-1,-1})
 {}
 
 CardsRound_NS::RoundState::RoundState(fullPlayerId _nextToPlayId, const Players& _players) : 
@@ -34,7 +34,7 @@ void CardsRound_NS::CardsRound::InitRound()
 {
     logStartRound();
     eventEmitter.emit(StartRoundEvent(roundState.nextToPlayId));
-    emitNextYoutTurnEvent();
+    emitNextYourTurnEvent();
 }
 
 bool CardsRound_NS::CardsRound::IsFinished()
@@ -61,7 +61,7 @@ MoveReturnValue CardsRound_NS::CardsRound::ApplyMove(const Move& move)
         }
         else
         {
-            emitNextYoutTurnEvent();
+            emitNextYourTurnEvent();
             return Ok;
         }
     }
@@ -78,7 +78,7 @@ void CardsRound_NS::CardsRound::playMove(const Move& move)
     roundState.playedMovesInRound.push_back(move);
 }
 
-void CardsRound_NS::CardsRound::emitNextYoutTurnEvent()
+void CardsRound_NS::CardsRound::emitNextYourTurnEvent()
 {
     eventEmitter.emit(YourTurnEvent(roundState.nextToPlayId,
                 roundState.players[roundState.nextToPlayId.second].deck.getDeck(), 

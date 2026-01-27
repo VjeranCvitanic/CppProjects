@@ -25,6 +25,7 @@ add_library(card_core
     src/BriscolaGame.cpp
     src/BriscolaMatch.cpp
     src/BriscolaRules.cpp
+    src/Acussos.cpp
 )
 
 target_include_directories(card_core PUBLIC src)

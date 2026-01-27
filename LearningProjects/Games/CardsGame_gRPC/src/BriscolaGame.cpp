@@ -26,13 +26,11 @@ BriscolaGame_NS::BriscolaGame::BriscolaGame(const BriscolaGame_NS::BriscolaGameS
 void BriscolaGame_NS::BriscolaGame::updateGameResult()
 {
     gameResult.points[currRound->roundResult.winnerId.first] += currRound->roundResult.points; // team points
-    gameResult.winnerId = currRound->roundResult.winnerId.first;
 }
+
 
 bool BriscolaGame_NS::BriscolaGame::IsFinished()
 {
-    /*if(currRound->roundState.playedMovesInRound[0].call == ConQuestaBasta)
-        return true;*/
     if(gameState.roundCnt >= DECK_SIZE/handSize)
         return true;
     return false;
@@ -44,7 +42,7 @@ void BriscolaGame_NS::BriscolaGame::startNewRound()
     {
         for(auto& p : gameState.players)
         {
-            fullPlayerId teammateId = {p.playerId.first, (p.playerId.second + 1) % 2};
+            fullPlayerId teammateId = {p.playerId.first, (p.playerId.second + 2) % numPlayers};
             eventEmitter.emit(BriscolaLastRoundEvent(p.playerId, teammateId, gameState.players[teammateId.second].deck.getDeck(), gameResult.points[p.playerId.first]));
         }
     }
@@ -56,4 +54,10 @@ void BriscolaGame_NS::BriscolaGame::startNewRound()
         numPlayers,
         eventEmitter
     );
+}
+
+void BriscolaGame_NS::BriscolaGame::InitGame()
+{
+    LOG_INFO("Game init");
+    eventEmitter.emit(StartBriscolaGameEvent(gameState.nextToPlayId, lastCard));
 }

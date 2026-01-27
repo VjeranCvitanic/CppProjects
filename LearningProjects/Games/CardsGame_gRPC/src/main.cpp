@@ -26,7 +26,7 @@ int main()
     {
         parseInput(move, playerId);
         playerId.first = (playerId.first + 1) % 2;
-        playerId.second = (playerId.second + 1) % 2;
+        playerId.second = (playerId.second + 1) % players.size();
     }while(match.ApplyMove(move) != Finish);
 }
 

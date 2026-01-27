@@ -87,7 +87,9 @@ typedef std::pair<PlayerId, TeamId> fullPlayerId;
 typedef std::tuple<Color, Number> Card;
 typedef std::vector<Card> CardSet;
 
-typedef std::unordered_map<fullPlayerId, std::vector<AcussoType>> AcussosMap;
+typedef std::vector<AcussoType> Acussos;
+
+typedef std::unordered_map<fullPlayerId, Acussos> AcussosMap;
 
 struct Move
 {
@@ -120,5 +122,6 @@ enum EventVisibility
 {
     Private = 0,
     Teammate = 1,
-    Broadcast
+    Broadcast,
+    EngineInternal
 };

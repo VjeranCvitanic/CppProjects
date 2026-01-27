@@ -21,6 +21,17 @@ CardsGame_NS::GameState::GameState(fullPlayerId _nextToPlayId, const CardsRound_
 
 void CardsGame_NS::CardsGame::dealCards(int8_t numCards)
 {
+
+    dealCardsImpl(numCards, nullptr);
+}
+
+void CardsGame_NS::CardsGame::dealCards(int8_t numCards, std::vector<CardSet>& vector)
+{
+    dealCardsImpl(numCards, &vector);
+}
+
+void CardsGame_NS::CardsGame::dealCardsImpl(int8_t numCards, std::vector<CardSet>* out)
+{
     LOG_DEBUG("Deal cards: ", +numCards);
     if(gameState.deck.getDeck().size() < numCards)
     {
@@ -41,6 +52,9 @@ void CardsGame_NS::CardsGame::dealCards(int8_t numCards)
         gameState.players[playerId].deck.AddCard(card);
         playerId = (playerId + 1) % numPlayers;
         dealtCards[playerId].push_back(card);
+
+        if (out)
+            (*out)[playerId].push_back(card);
     }
 
     for(int playerId = 0; playerId < numPlayers; playerId++)
@@ -60,19 +74,32 @@ CardSet CardsGame_NS::CardsGame::drawCards(int8_t numCards)
     return drawnCards;
 }
 
-MoveReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
+bool CardsGame_NS::CardsGame::isLastRound()
 {
-    MoveReturnValue roundRetVal = currRound->ApplyMove(move);
+    if(gameState.roundCnt == DECK_SIZE / handSize)
+        return true;
+    return false;
+}
+
+void CardsGame_NS::CardsGame::postDealtCards(const std::vector<CardSet>& cards)
+{}
+
+MoveReturnValue CardsGame_NS::CardsGame::postMove(MoveReturnValue roundRetVal)
+{
     if(roundRetVal == Finish)
     {
         updateGameResult();
         LOG_INFO("Game result so far: ", gameResult.points[0], " : ", gameResult.points[1]);
         gameState.roundCnt++;
-        gameState.players = currRound->roundState.players;
-        PlayerId nextToPlayId = (gameState.nextToPlayId.second + 1) % 2;
+        gameState.players = std::move(currRound->roundState.players);
+        PlayerId nextToPlayId = (gameState.nextToPlayId.second + 1) % numPlayers;
         gameState.nextToPlayId = {nextToPlayId%2, nextToPlayId};
         if(gameState.deck.getDeck().size() > 0)
-            dealCards(handSize);
+        {
+            std::vector<CardSet> dealtCards;
+            dealCards(handSize, dealtCards);
+            postDealtCards(dealtCards);
+        }
 
         if(IsFinished())
         {
@@ -83,6 +110,13 @@ MoveReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
     }
 
     return Ok;
+}
+
+MoveReturnValue CardsGame_NS::CardsGame::ApplyMove(const Move& move)
+{
+    MoveReturnValue roundRetVal = currRound->ApplyMove(move);
+
+    return postMove(roundRetVal);
 }
 
 void CardsGame_NS::CardsGame::InitGame()

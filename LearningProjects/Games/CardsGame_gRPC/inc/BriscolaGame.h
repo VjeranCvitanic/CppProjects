@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Cards.h"
 #include "CardsGame.h"
 #include "Types.h"
 
@@ -11,10 +10,8 @@ namespace BriscolaGame_NS
     {
     public:
         BriscolaGameState(fullPlayerId _nextToPlayId, const CardsRound_NS::Players& _players) :
-            strongColor(Cards::getColor(deck.getCard(0))),
             CardsGame_NS::GameState(_nextToPlayId, _players)
         {}
-        Color strongColor;
     };
 
     class BriscolaGame : public CardsGame_NS::CardsGame
@@ -27,6 +24,7 @@ namespace BriscolaGame_NS
     protected:
         Color strongColor;
         Card lastCard;
+        void InitGame() override;
 
         Color getStrongColor() const;
         void updateGameResult() override;

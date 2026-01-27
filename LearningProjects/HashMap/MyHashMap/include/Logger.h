@@ -116,8 +116,9 @@ public:
     void LogEv(const PlayerPlayedMoveEvent& e);
     void LogEv(const PlayerDealtCardsEvent& e);
     void LogEv(const StartRoundEvent& e);
-    void LogEv(const TressetteStartRoundEvent& e);
+    void LogEv(const TressetteDealtCardsEvent& e);
     void LogEv(const StartGameEvent& e);
+    void LogEv(const StartBriscolaGameEvent& e);
     void LogEv(const StartMatchEvent& e);
     void LogEv(const RoundOverEvent& e);
     void LogEv(const GameOverEvent& e);
@@ -126,6 +127,7 @@ public:
     void LogEv(const MoveResponseEvent& e);
     void LogEv(const AcussoEvent& e);
     void LogEv(const BriscolaLastRoundEvent& e);
+    void LogEv(const BeforeFirstMoveEvent& e);
 
 private:
     static std::unique_ptr<Logger> instance;

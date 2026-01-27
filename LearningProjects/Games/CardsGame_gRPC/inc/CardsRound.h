@@ -63,7 +63,7 @@ namespace CardsRound_NS
 
         void InitRound();
         void EndRound();
-        bool IsFinished();
+        virtual bool IsFinished();
         void playMove(const Move&);
 
         Points CalculateRoundResult();
@@ -72,7 +72,7 @@ namespace CardsRound_NS
 
         virtual void preMoveSetup();
         virtual void postMoveSetup(const Move&);
-        void emitNextYoutTurnEvent();
+        void emitNextYourTurnEvent();
         void emitMoveRspEvent(const Move& move, MoveReturnValue moveValidity);
     private:
     };

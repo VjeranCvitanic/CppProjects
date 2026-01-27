@@ -1,7 +1,7 @@
 #include "../inc/Acussos.h"
 #include "../inc/Cards.h"
 
-std::string Acussos::AcussoToString(AcussoType a)
+std::string Acussos_NS::AcussoToString(AcussoType a)
 {
     switch (a)
     {
@@ -29,14 +29,22 @@ std::string Acussos::AcussoToString(AcussoType a)
     return "Acusso sconosciuto";
 }
 
-void Acussos::CalculateAcussoPoints(const CardSet& hand, int& points, std::vector<AcussoType>& Acussos)
+int Acussos_NS::AcussoCheck(const CardSet& hand, Acussos& acussosList)
+{
+    int points = 0;
+    CalculateAcussoPoints(hand, points, acussosList);
+
+    return points;
+}
+
+void Acussos_NS::CalculateAcussoPoints(const CardSet& hand, int& points, Acussos& Acussos)
 {
     points = 0;
     points += Napolitana(hand, Acussos);
     points += SameNumberAcusso(hand, Acussos);
 }
 
-int Acussos::SameNumberAcusso(const CardSet& hand, std::vector<AcussoType>& Acussos)
+int Acussos_NS::SameNumberAcusso(const CardSet& hand, Acussos& Acussos)
 {
     int pts = 0;
     for(int n = Asso; n <= Tre; n++)
@@ -145,7 +153,7 @@ int Acussos::SameNumberAcusso(const CardSet& hand, std::vector<AcussoType>& Acus
     return pts;
 }
 
-int Acussos::Napolitana(const CardSet& hand, std::vector<AcussoType>& Acussos)
+int Acussos_NS::Napolitana(const CardSet& hand, Acussos& Acussos)
 {
     int pts = 0;
     if(hand.size() < 3)

@@ -23,7 +23,10 @@ struct BroadcastEvent
     static constexpr EventVisibility visibility = EventVisibility::Broadcast;
 };
 
-
+struct Engineinternal
+{
+    static constexpr EventVisibility visibility = EventVisibility::EngineInternal;
+};
 
 struct PlayerDealtCardsEvent : TeamEvent
 {
@@ -58,6 +61,16 @@ struct StartGameEvent : BroadcastEvent
 
     explicit StartGameEvent(fullPlayerId pid)
         : firstToPlayId(pid) {}
+};
+
+struct StartBriscolaGameEvent : BroadcastEvent
+{
+    fullPlayerId firstToPlayId;
+    Card lastCard;
+
+    explicit StartBriscolaGameEvent(fullPlayerId pid, Card _lastCard)
+        : firstToPlayId(pid),
+          lastCard(_lastCard) {}
 };
 
 struct StartMatchEvent : BroadcastEvent
@@ -134,14 +147,18 @@ struct MoveResponseEvent : PrivateEvent
 struct AcussoEvent : BroadcastEvent
 {
     fullPlayerId playerId;
-    AcussoType acusso;
+    Acussos acussos;
 
-    AcussoEvent(fullPlayerId pid, AcussoType a)
+    AcussoEvent(fullPlayerId pid, Acussos a)
         : playerId(pid)
-        , acusso(a)
+        , acussos(a)
     {}
 };
 
+struct BeforeFirstMoveEvent : Engineinternal
+{
+    fullPlayerId playerId;
+};
 
 struct BriscolaLastRoundEvent : TeamEvent
 {
@@ -161,14 +178,15 @@ struct BriscolaLastRoundEvent : TeamEvent
     {}
 };
 
-struct TressetteStartRoundEvent : StartRoundEvent
+struct TressetteDealtCardsEvent : BroadcastEvent
 {
-    std::unordered_map<PlayerId, CardSet> roundDealtCards;
+    CardSet dealtCards;
+    fullPlayerId playerId;
 
-    TressetteStartRoundEvent(fullPlayerId firstToPlay,
-                             std::unordered_map<PlayerId, CardSet> dealt)
-        : StartRoundEvent(firstToPlay)
-        , roundDealtCards(std::move(dealt))
+    TressetteDealtCardsEvent(fullPlayerId _playerId,
+                             CardSet _dealtCards)
+        : playerId(_playerId)
+        , dealtCards(std::move(_dealtCards))
     {}
 };
 
@@ -176,14 +194,16 @@ using GameEvent = std::variant<
     PlayerPlayedMoveEvent,
     PlayerDealtCardsEvent,
     StartRoundEvent,
-//    TressetteStartRoundEvent,
+    TressetteDealtCardsEvent,
     StartGameEvent,
+    StartBriscolaGameEvent,
     StartMatchEvent,
     RoundOverEvent,
     GameOverEvent,
     MatchOverEvent,
     YourTurnEvent,
     MoveResponseEvent,
-//    AcussoEvent,
-    BriscolaLastRoundEvent
+    AcussoEvent,
+    BriscolaLastRoundEvent,
+    BeforeFirstMoveEvent
 >;

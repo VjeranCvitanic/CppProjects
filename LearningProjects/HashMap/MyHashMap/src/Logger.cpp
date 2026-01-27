@@ -1,5 +1,6 @@
 #include "../include/Logger.h"
 #include "../../../Games/CardsGame_gRPC/inc/Cards.h"
+#include "../../../Games/CardsGame_gRPC/inc/Acussos.h"
 
 std::unique_ptr<std::ofstream> Logger::logFileStream;
 std::unique_ptr<std::ofstream> Logger::drawFileStream;
@@ -222,10 +223,22 @@ void Logger::LogEv(const StartRoundEvent& e)
     LOG_EVENT("Start Round, first to play: ", e.firstToPlayId);
 }
 
-//void Logger::LogEv(const TressetteStartRoundEvent& e);
+void Logger::LogEv(const TressetteDealtCardsEvent& e)
+{
+    LOG_EVENT("PlayerId: ", e.playerId.second, ", dealtCards: ");
+    for(auto& card : e.dealtCards)
+        LOG_EVENT(Cards::CardToString(card));
+}
+
 void Logger::LogEv(const StartGameEvent& e)
 {
     LOG_EVENT("Start Game, first to play: ", e.firstToPlayId);
+}
+
+void Logger::LogEv(const StartBriscolaGameEvent& e)
+{
+    LOG_EVENT("Start Game, first to play: ", e.firstToPlayId,
+             "Last card in deck: ", Cards::CardToString(e.lastCard));
 }
 
 void Logger::LogEv(const StartMatchEvent& e)
@@ -253,7 +266,20 @@ void Logger::LogEv(const MoveResponseEvent& e)
 {
     LOG_EVENT("Move: ", e.moveValidity);
 }
-//void Logger::LogEv(const AcussoEvent& e);
+
+void Logger::LogEv(const AcussoEvent& e)
+{
+    std::string acussosString;
+    for(auto& acusso : e.acussos)
+    {
+        if(!acussosString.empty())
+        acussosString += ", ";
+        acussosString.append(Acussos_NS::AcussoToString(acusso));
+    }
+
+    LOG_EVENT("Player: ", e.playerId.second, ", Acussos: ", acussosString);
+}
+
 void Logger::LogEv(const BriscolaLastRoundEvent& e)
 {
     LOG_EVENT("BriscolaLastRoundEvent: receiver: ", e.receiverPlayerId,
@@ -261,5 +287,8 @@ void Logger::LogEv(const BriscolaLastRoundEvent& e)
             ", team points: ", e.teamPoints,
             ", teammateHand: ");
     Cards::logCards(e.senderTeammateHand);
+}
 
+void Logger::LogEv(const BeforeFirstMoveEvent& e)
+{
 }

@@ -34,16 +34,25 @@ namespace CardsGame_NS
         int handSize;
         int numPlayers;
 
-        void InitGame();
+        virtual void InitGame();
         void EndGame();
         virtual bool IsFinished() = 0;
 
         CardSet drawCards(int8_t numCards);
+
         void dealCards(int8_t numCards);
+        void dealCards(int8_t numCards, std::vector<CardSet>&);
+
+        MoveReturnValue postMove(MoveReturnValue roundRetVal);
 
         virtual void updateGameResult() = 0;
         virtual void startNewRound() = 0;
+
+        virtual bool isLastRound();
+
+        virtual void postDealtCards(const std::vector<CardSet>& cards);
     private:
+        void dealCardsImpl(int8_t numCards, std::vector<CardSet>* out);
     };
 }
 
