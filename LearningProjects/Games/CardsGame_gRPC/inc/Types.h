@@ -115,7 +115,8 @@ enum MoveReturnValue
     Finish,
     NotYourTurn,
     CardNotInHand,
-    ColorConstraintNotMet
+    ColorConstraintNotMet,
+    CantCallIfNotFirstOfHand
 };
 
 enum EventVisibility

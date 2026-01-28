@@ -15,8 +15,13 @@ CardsMatch_NS::MatchState::MatchState(fullPlayerId _nextToStartId, const Players
 
 MoveReturnValue CardsMatch_NS::CardsMatch::ApplyMove(const Move& move)
 {
-    MoveReturnValue roundRetVal = currGame->ApplyMove(move);
-    if(roundRetVal == Finish)
+    MoveReturnValue gameRetVal = currGame->ApplyMove(move);
+    return PostMove(gameRetVal);
+}
+
+MoveReturnValue CardsMatch_NS::CardsMatch::PostMove(MoveReturnValue gameRetVal)
+{
+    if(gameRetVal == Finish)
     {
         updateMatchResult();
         LOG_INFO("Match result so far: ");
@@ -25,7 +30,7 @@ MoveReturnValue CardsMatch_NS::CardsMatch::ApplyMove(const Move& move)
             LOG_INFO(matchResult.score.at(p.first).wonGames);
         }
         matchState.gameCnt++;
-        PlayerId playerId = (currGame->gameState.nextToPlayId.second + 1) % numPlayers;
+        PlayerId playerId = (matchState.nextToStartId.second + 1) % numPlayers;
         matchState.nextToStartId = {playerId%2, playerId};
 
         if(IsFinished())

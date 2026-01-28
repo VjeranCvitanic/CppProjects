@@ -8,7 +8,12 @@
 
 namespace TressetteGame_NS
 {
-    class TressetteGameState : public CardsGame_NS::GameState, public EventSink
+    struct TressetteRuleState final : CardsGame_NS::IRuleState
+    {
+        fullPlayerId bastaCalled;
+    };
+
+    class TressetteGameState : public CardsGame_NS::GameState
     {
     public:
         TressetteGameState(fullPlayerId _nextToPlayId, const CardsRound_NS::Players& _players) :
@@ -16,11 +21,14 @@ namespace TressetteGame_NS
         {}
     };
 
-    class TressetteGame : public CardsGame_NS::CardsGame
+    class TressetteGame : public CardsGame_NS::CardsGame, public EventSink
     {
     public:
         TressetteGame(const TressetteGameState& gameState, int _numPlayers, const EventEmitter& _eventEmitter);
-
+        TressetteRuleState& rule()
+        {
+            return static_cast<TressetteRuleState&>(*ruleState);
+        }
     protected:
         void updateGameResult() override;
 
@@ -28,7 +36,7 @@ namespace TressetteGame_NS
 
         void startNewRound() override;
 
-        void onEvent(const GameEvent& e);
+        void onEvent(const GameEvent& e) override;
         void postDealtCards(const std::vector<CardSet>& cards) override;
     private:
         void handleBeforeFirstMove(const BeforeFirstMoveEvent& e);

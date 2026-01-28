@@ -11,8 +11,5 @@ namespace CardsRound_NS
 
         fullPlayerId winnerId;
         Points points;
-
-        //todo
-        fullPlayerId bastaCalled;
     };
 }

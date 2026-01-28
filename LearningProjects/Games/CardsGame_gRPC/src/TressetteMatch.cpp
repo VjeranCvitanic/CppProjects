@@ -35,17 +35,19 @@ void TressetteMatch_NS::TressetteMatch::updateMatchResult()
 {
     for(int i = 0 ; i <= 1; i++)
     {
-        matchResult.score[i].points += currGame->gameResult.points[i];
+        matchResult.score[i].points.punta += currGame->gameResult.points[i].punta; // match points is just punta, no need for bella
     }
 }
 
 bool TressetteMatch_NS::TressetteMatch::IsFinished()
 {
-    if(currGame->gameResult.bastaCalled.first != -1)
+    auto& game = static_cast<TressetteGame_NS::TressetteGame&>(*currGame);
+    auto& rule = game.rule();
+    if(rule.bastaCalled.first != -1)
     {
-        if(currGame->gameResult.points[currGame->gameResult.bastaCalled.first].punta >= 41)
+        if(currGame->gameResult.points[rule.bastaCalled.first].punta >= 41)
         {
-            matchResult.winnerId = currGame->gameResult.bastaCalled.first;
+            matchResult.winnerId = rule.bastaCalled.first;
             return true;
         }
     }

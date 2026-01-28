@@ -8,6 +8,11 @@
 
 namespace CardsGame_NS
 {
+    struct IRuleState // rule specific state interface
+    {
+        virtual ~IRuleState() = default;
+    };
+
     struct GameState
     {
         GameState(fullPlayerId _nextToPlayId, const CardsRound_NS::Players& _players);
@@ -21,10 +26,11 @@ namespace CardsGame_NS
     class CardsGame
     {
     public:
-        CardsGame(const GameState& _gameState, int _handSize, int _numPlayers, const EventEmitter& _eventEmitter);
+        CardsGame(const GameState& _gameState, std::unique_ptr<IRuleState> ruleState, int _handSize, int _numPlayers, const EventEmitter& _eventEmitter);
         virtual ~CardsGame() = default;
 
         GameState gameState;
+        std::unique_ptr<IRuleState> ruleState;
         GameResult gameResult;
         std::unique_ptr<CardsRound_NS::CardsRound> currRound;
 

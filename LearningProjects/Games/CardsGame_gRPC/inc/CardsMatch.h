@@ -35,5 +35,6 @@ namespace CardsMatch_NS
         virtual void InitMatch() = 0;
         virtual void updateMatchResult() = 0;
         void EndMatch();
+        MoveReturnValue PostMove(MoveReturnValue gameRetVal);
     };
 }

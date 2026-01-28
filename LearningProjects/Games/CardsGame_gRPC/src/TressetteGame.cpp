@@ -1,11 +1,11 @@
 #include "../inc/TressetteGame.h"
 #include "../inc/TressetteRound.h"
 #include "../inc/Acussos.h"
-//#include "../../../HashMap/MyHashMap/include/Logger.h"
+#include "../../../HashMap/MyHashMap/include/Logger.h"
 
 
 TressetteGame_NS::TressetteGame::TressetteGame(const TressetteGame_NS::TressetteGameState& _gameState, int _numPlayers, const EventEmitter& _eventEmitter) :
-    CardsGame(_gameState, _numPlayers, _numPlayers, _eventEmitter)
+    CardsGame(_gameState, std::make_unique<TressetteRuleState>(), _numPlayers, _numPlayers, _eventEmitter)
 {
     dealCards(20);
 
@@ -16,17 +16,20 @@ void TressetteGame_NS::TressetteGame::updateGameResult()
 {
     if(isLastRound())
         gameResult.points[currRound->roundResult.winnerId.first].punta++;
-    gameResult.bastaCalled = currRound->roundResult.bastaCalled;
-    if(gameResult.bastaCalled.first != -1)
+    auto& round = static_cast<TressetteRound_NS::TressetteRound&>(*currRound);
+
+    rule().bastaCalled = round.bastaCalled;
+
+    fullPlayerId winnerId = currRound->roundResult.winnerId;
+    if(rule().bastaCalled.first != -1)
     {
-        fullPlayerId winnerId = currRound->roundResult.winnerId;
         TeamId loserId = (winnerId.first + 1) % 2;
 
-        if(gameResult.bastaCalled == winnerId)
-        {
-            Points newPoints = gameResult.points[winnerId.first].punta + currRound->roundResult.points.punta;
+        if(rule().bastaCalled == winnerId)
+        {    
+            Points newPoints = gameResult.points[winnerId.first] + currRound->roundResult.points;
             if(newPoints.punta >= 41)
-                gameResult.points[winnerId.first] = newPoints; // todo game points is just punta, no need for bella
+                gameResult.points[winnerId.first] = newPoints;
             else
                 gameResult.points[loserId] += 11;
         }
@@ -35,14 +38,14 @@ void TressetteGame_NS::TressetteGame::updateGameResult()
         }
     }
     else
-        gameResult.points[currRound->roundResult.winnerId.first].punta += currRound->roundResult.points.punta;
+        gameResult.points[winnerId.first] += currRound->roundResult.points;
 }
 
 bool TressetteGame_NS::TressetteGame::IsFinished()
 {
     if(currRound->roundState.playedMovesInRound[0].call == ConQuestaBasta)
         return true;
-    if(gameState.roundCnt >= DECK_SIZE/handSize)
+    if(gameState.roundCnt > DECK_SIZE/handSize)
         return true;
     return false;
 }

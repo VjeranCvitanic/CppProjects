@@ -9,14 +9,10 @@ namespace CardsGame_NS
     {
         GameResult() :
             winnerId(-1),
-            points(0),
-            bastaCalled({-1, -1})
+            points(0)
         {}
 
         PlayerId winnerId;
         std::unordered_map<TeamId, Points> points;
-
-        // todo
-        fullPlayerId bastaCalled;
     };
 }

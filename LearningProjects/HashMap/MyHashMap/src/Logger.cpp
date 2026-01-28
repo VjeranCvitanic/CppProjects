@@ -248,7 +248,7 @@ void Logger::LogEv(const StartMatchEvent& e)
 
 void Logger::LogEv(const RoundOverEvent& e)
 {
-    LOG_EVENT("Round over");
+    LOG_EVENT("Round over, result: winnerId:", e.roundResult.winnerId, ", points: (", e.roundResult.points.punta, ", ", e.roundResult.points.bella, ")");
 }
 void Logger::LogEv(const GameOverEvent& e)
 {

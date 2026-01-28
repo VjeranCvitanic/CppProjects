@@ -1,6 +1,5 @@
 #include <iostream>
-#include"../inc/CardsMatch.h"
-#include "../inc/BriscolaMatch.h"
+#include "../inc/TressetteMatch.h"
 #include "../inc/Cards.h"
 #include "../../../HashMap/MyHashMap/include/Logger.h"
 
@@ -18,7 +17,8 @@ int main()
     CardsMatch_NS::Players players = {{0, 0}, {1, 1}};
 
     CardsMatch_NS::MatchState matchState({0, 0}, players);
-    BriscolaMatch_NS::BriscolaMatch match(matchState, 2, eventEmitter);
+    //BriscolaMatch_NS::BriscolaMatch match(matchState, 2, eventEmitter);
+    TressetteMatch_NS::TressetteMatch match(matchState, 2, eventEmitter);
 
     Move move;
     fullPlayerId playerId = {0, 0};
@@ -100,7 +100,7 @@ int parse(std::string input, Move& move, fullPlayerId playerId)
 
     card = std::make_tuple(color, Cards::intToNumber(_number));
 
-    move = {.card = card, .call = call, .playerId = playerId};
+    move = {.card = card, .call = ConQuestaBasta, .playerId = playerId};
 
     LOG_DEBUG("move", Cards::CardToString(card));
 

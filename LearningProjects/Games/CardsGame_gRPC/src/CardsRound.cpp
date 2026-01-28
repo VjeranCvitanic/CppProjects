@@ -17,7 +17,7 @@ CardsRound_NS::RoundRules::RoundRules()
 {}
 
 CardsRound_NS::RoundResult::RoundResult() : 
-    points(0), winnerId({-1, -1}), bastaCalled({-1,-1})
+    points(0), winnerId({-1, -1})
 {}
 
 CardsRound_NS::RoundState::RoundState(fullPlayerId _nextToPlayId, const Players& _players) : 
@@ -114,6 +114,8 @@ void CardsRound_NS::CardsRound::EndRound()
     LOG_DEBUG("winnerId", winnerId);
     roundResult.winnerId = winnerId;
     roundResult.points = CalculateRoundResult();
+
+    roundState.nextToPlayId = winnerId;
 
     eventEmitter.emit(RoundOverEvent(std::move(roundResult)));
 

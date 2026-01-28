@@ -21,10 +21,6 @@ add_library(card_core
     src/CardsRound.cpp
     src/CardsGame.cpp
     src/CardsMatch.cpp
-    src/BriscolaRound.cpp
-    src/BriscolaGame.cpp
-    src/BriscolaMatch.cpp
-    src/BriscolaRules.cpp
     src/Acussos.cpp
 )
 
@@ -33,9 +29,23 @@ target_include_directories(card_core PUBLIC src)
 # =========================
 # Tournament executable
 # =========================
-add_executable(main
-    src/main.cpp
+add_executable(tressette
+    src/main_tressette.cpp
+    src/TressetteMatch.cpp
+    src/TressetteGame.cpp
+    src/TressetteRound.cpp
+    src/TressetteRules.cpp
 )
 
-target_link_libraries(main PRIVATE card_core)
+add_executable(briscola
+    src/main_briscola.cpp
+    src/BriscolaRound.cpp
+    src/BriscolaGame.cpp
+    src/BriscolaMatch.cpp
+    src/BriscolaRules.cpp
+)
+
+target_link_libraries(tressette PRIVATE card_core)
+target_link_libraries(briscola PRIVATE card_core)
+
 

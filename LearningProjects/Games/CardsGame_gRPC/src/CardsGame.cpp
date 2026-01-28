@@ -4,8 +4,8 @@
 #include <vector>
 
 
-CardsGame_NS::CardsGame::CardsGame(const CardsGame_NS::GameState& _gameState, int _handSize, int _numPlayers, const EventEmitter& _eventEmitter) :
-    gameState(_gameState), handSize(_handSize), numPlayers(_numPlayers), eventEmitter(_eventEmitter)
+CardsGame_NS::CardsGame::CardsGame(const CardsGame_NS::GameState& _gameState, std::unique_ptr<IRuleState> _ruleState, int _handSize, int _numPlayers, const EventEmitter& _eventEmitter) :
+    gameState(_gameState), ruleState(std::move(_ruleState)), handSize(_handSize), numPlayers(_numPlayers), eventEmitter(_eventEmitter)
 {
     LOG_DEBUG("CardsGame ctor");
     InitGame();
@@ -16,7 +16,7 @@ CardsGame_NS::GameState::GameState(fullPlayerId _nextToPlayId, const CardsRound_
 {
     LOG_DEBUG("GameState ctor");
     deck = Deck(true);
-    roundCnt = 0;
+    roundCnt = 1;
 }
 
 void CardsGame_NS::CardsGame::dealCards(int8_t numCards)
@@ -44,14 +44,16 @@ void CardsGame_NS::CardsGame::dealCardsImpl(int8_t numCards, std::vector<CardSet
 
     std::vector<CardSet> dealtCards;
     dealtCards.resize(numPlayers);
+    if(out)
+        out->resize(numCards);
 
     for(int i = 0; i < numCards; i++)
     {
         Card card = drawnCards[i];
 
         gameState.players[playerId].deck.AddCard(card);
-        playerId = (playerId + 1) % numPlayers;
         dealtCards[playerId].push_back(card);
+        playerId = (playerId + 1) % numPlayers;
 
         if (out)
             (*out)[playerId].push_back(card);
@@ -92,8 +94,14 @@ MoveReturnValue CardsGame_NS::CardsGame::postMove(MoveReturnValue roundRetVal)
         LOG_INFO("Game result so far: ", gameResult.points[0], " : ", gameResult.points[1]);
         gameState.roundCnt++;
         gameState.players = std::move(currRound->roundState.players);
-        PlayerId nextToPlayId = (gameState.nextToPlayId.second + 1) % numPlayers;
-        gameState.nextToPlayId = {nextToPlayId%2, nextToPlayId};
+        gameState.nextToPlayId = currRound->roundResult.winnerId;
+
+        if(IsFinished())
+        {
+            EndGame();
+            return Finish;
+        }
+
         if(gameState.deck.getDeck().size() > 0)
         {
             std::vector<CardSet> dealtCards;
@@ -101,11 +109,6 @@ MoveReturnValue CardsGame_NS::CardsGame::postMove(MoveReturnValue roundRetVal)
             postDealtCards(dealtCards);
         }
 
-        if(IsFinished())
-        {
-            EndGame();
-            return Finish;
-        }
         startNewRound();
     }
 

@@ -165,6 +165,8 @@ inline std::ostream& operator<<(std::ostream& os, MoveReturnValue v)
             return os << "CardNotInDeck";
         case MoveReturnValue::ColorConstraintNotMet:
             return os << "ColorConstraintNotMet";
+        case MoveReturnValue::CantCallIfNotFirstOfHand:
+            return os << "CantCallIfNotFirstOfHand";
         case MoveReturnValue::Finish:
             return os << "Finish";
     }

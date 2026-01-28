@@ -21,12 +21,19 @@ bool TressetteRules::IsMoveLegal(const Move& move, const CardsRound_NS::RoundSta
     }
     if(checkConstraints(state.players[playerId].deck.getDeck(), move.card, state.moveConstraints.colorToPlay) == false)
     {
-        LOG_DEBUG("Color constraint not met: played card: ");
+        LOG_INFO("Color constraint not met: played card: ");
         Cards::logCard(move.card);
         LOG_DEBUG("Color to play: ", state.moveConstraints.colorToPlay);
         LOG_DEBUG("Current hand: ");
         Cards::logCards(state.players[playerId].deck.getDeck());
         reason = ColorConstraintNotMet;
+        return false;
+    }
+
+    if(state.playedMovesInRound.size() != 0 && move.call != NoCall)
+    {
+        LOG_INFO("Cant call if not first of trick!");
+        reason = CantCallIfNotFirstOfHand;
         return false;
     }
 

@@ -1,6 +1,7 @@
 #include "../inc/TressetteRound.h"
 #include "../inc/TressetteRules.h"
 #include "../../../HashMap/MyHashMap/include/Logger.h"
+#include "../inc/Cards.h"
 
 TressetteRound_NS::TressetteRound::TressetteRound(const TressetteRoundState& _state, int _numPlayers, const EventEmitter& _eventEmitter) :
     CardsRound_NS::CardsRound(TressetteRules::instance(), _state, _numPlayers, _numPlayers, _eventEmitter)
@@ -17,12 +18,21 @@ void TressetteRound_NS::TressetteRound::preMoveSetup()
     LOG_DEBUG("Tressette before move");
 }
 
+void TressetteRound_NS::TressetteRound::postMoveSetup(const Move& move)
+{
+    CardsRound_NS::CardsRound::postMoveSetup(move);
+    if(roundState.playedMovesInRound.size() == 1)
+        roundState.moveConstraints.colorToPlay = Cards::getColor(move.card);
+    if(move.call == ConQuestaBasta)
+        bastaCalled = move.playerId;
+}
+
 bool TressetteRound_NS::TressetteRound::IsFinished()
 {
     if(CardsRound_NS::CardsRound::IsFinished())
         return true;
 
-    if(roundResult.bastaCalled.first != -1)
+    if(bastaCalled.first != -1)
         return true;
 
     return false;

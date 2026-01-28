@@ -18,9 +18,9 @@ namespace TressetteRound_NS
         TressetteRound(const TressetteRound&) = default;
         void preMoveSetup() override;
         bool IsFinished() override;
+        void postMoveSetup(const Move&) override;
 
         // todo tressette only
         fullPlayerId bastaCalled = {-1,-1};
-        bool firstRound;
     };
 }

@@ -5,12 +5,12 @@
 #include <memory>
 
 BriscolaGame_NS::BriscolaGame::BriscolaGame(const BriscolaGame_NS::BriscolaGameState& _gameState, int _numPlayers, const EventEmitter& _eventEmitter) :
-    CardsGame(_gameState, HandSize, _numPlayers, _eventEmitter)
+    CardsGame(_gameState,  std::make_unique<BriscolaRuleState>(), HandSize, _numPlayers, _eventEmitter)
 {
-    lastCard = gameState.deck.getCard(0);
-    strongColor = Cards::getColor(lastCard);
-    LOG_INFO("Strong color: ", Cards::ColorToString(strongColor));
-    LOG_INFO("Last card: ", Cards::CardToString(lastCard));
+    rule().lastCard = gameState.deck.getCard(0);
+    rule().strongColor = Cards::getColor(rule().lastCard);
+    LOG_INFO("Strong color: ", Cards::ColorToString(rule().strongColor));
+    LOG_INFO("Last card: ", Cards::CardToString(rule().lastCard));
 
     int numCards = 0;
     if(numPlayers == Two)
@@ -47,7 +47,7 @@ void BriscolaGame_NS::BriscolaGame::startNewRound()
         }
     }
 
-    BriscolaRound_NS::BriscolaRoundState roundState(strongColor, gameState.nextToPlayId, gameState.players);
+    BriscolaRound_NS::BriscolaRoundState roundState(rule().strongColor, gameState.nextToPlayId, gameState.players);
     currRound = std::make_unique<BriscolaRound_NS::BriscolaRound>(
         roundState,
         handSize,
@@ -59,5 +59,5 @@ void BriscolaGame_NS::BriscolaGame::startNewRound()
 void BriscolaGame_NS::BriscolaGame::InitGame()
 {
     LOG_INFO("Game init");
-    eventEmitter.emit(StartBriscolaGameEvent(gameState.nextToPlayId, lastCard));
+    eventEmitter.emit(StartBriscolaGameEvent(gameState.nextToPlayId, rule().lastCard));
 }
